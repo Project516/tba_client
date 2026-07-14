@@ -59,11 +59,12 @@ class TbaEvent {
   });
 
   factory TbaEvent.fromJson(Map<String, dynamic> json) {
+    final year = json['year'];
     final week = json['week'];
     return TbaEvent(
       key: (json['key'] as String?) ?? '',
       name: (json['name'] as String?) ?? '',
-      year: (json['year'] as num?)?.toInt() ?? 0,
+      year: year is num ? year.toInt() : 0,
       // TBA weeks are zero-based; Statbotics (and humans) count from 1.
       week: week is num ? week.toInt() + 1 : null,
       country: json['country'] as String?,
