@@ -10,6 +10,7 @@
 
 ## 0.1.0
 
-- Initial release: `TbaClient` (`getTeam`, `getTeams`, `getEventMatches`,
-  `getEventTeams`, `fetchTeamAvatar`) with typed models and pluggable API
-  key resolution through `TbaConfig` (`CompileTimeTbaConfig` built in).
+- Initial release: `TbaClient` (`getStatus`, `getTeam`, `getEventTeams`,
+  `fetchTeamAvatar`, `getEvent`, `getEventsForYear`, `getEventMatches`,
+  `getMatch`) with typed models and pluggable API key resolution through
+  `TbaConfig` (`CompileTimeTbaConfig` built in).
