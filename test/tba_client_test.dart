@@ -610,8 +610,7 @@ void main() {
 
   test('TbaClient.getEventCoprs returns null on HTTP 200 with null body',
       () async {
-    final mockClient =
-        MockClient((_) async => http.Response('null', 200));
+    final mockClient = MockClient((_) async => http.Response('null', 200));
     final client = TbaClient(
       config: InMemoryTbaConfig('test-key'),
       httpClient: mockClient,
