@@ -2,11 +2,10 @@
 
 ## Unreleased
 
-- Add test coverage for `getEvent`, `getEventsForYear`, `getEventMatches`,
-  `TbaScheduleMatch`/`TbaEvent` JSON parsing, and `close()`.
-- Fix `TbaEvent.fromJson` crashing on a non-numeric `year` field. The cast
-  `(json['year'] as num?)` threw a `TypeError` for unexpected payloads; it now
-  falls back to `0` like the `week` field does.
+- Add `getEventCoprs` method to fetch component OPR (COPRS) breakdown for an
+  event, needed by SpectrumStrategy. The COPRS response varies by game year,
+  so `TbaEventCoprs` exposes an open `Map<String, Map<String, num>>` keyed by
+  team key and stat name (OPR, DPR, Foul Points, etc.).
 
 ## 0.1.0
 

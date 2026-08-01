@@ -198,3 +198,52 @@ class TbaMatch {
     return null;
   }
 }
+
+/// Component OPR (COPRS) data for an event, from
+/// `GET /event/{event_key}/coprs`.
+///
+/// TBA returns a flat JSON object keyed by team key, where each value is a
+/// map of stat name to number. The stat names are not fixed across game
+/// years (the 2025 breakdown is 20+ columns), so this model carries an open
+/// `Map<String, Map<String, num>>` rather than named fields -- unlike
+/// [TbaEvent] / [TbaScheduleMatch], which have a stable shape.
+///
+/// Common stats include `"OPR"` (Offensive Power Rating), `"DPR"`
+/// (Defensive Power Rating), `"ccwm"` (Calculating Contribution to Winning
+/// Margin), and `"Foul Points"`, but the set varies per game year.
+class TbaEventCoprs {
+  TbaEventCoprs({required this.eventKey, required this.stats});
+
+  factory TbaEventCoprs.fromJson(
+    String eventKey,
+    Map<String, dynamic> json,
+  ) {
+    final stats = <String, Map<String, num>>{};
+    json.forEach((teamKey, value) {
+      if (value is Map) {
+        final teamStats = <String, num>{};
+        value.forEach((statName, statValue) {
+          if (statValue is num) {
+            teamStats[statName.toString()] = statValue;
+          }
+        });
+        stats[teamKey] = teamStats;
+      }
+    });
+    return TbaEventCoprs(eventKey: eventKey, stats: stats);
+  }
+
+  /// The event key this COPRS breakdown belongs to, e.g. `2026txhou`.
+  final String eventKey;
+
+  /// Per-team stat maps, keyed by team key (e.g. `frc254`). Each inner map
+  /// holds stat name to value pairs (e.g. `{"OPR": 45.2, "DPR": -3.1}`).
+  /// Entries with a non-numeric stat value are skipped.
+  final Map<String, Map<String, num>> stats;
+
+  /// Whether the breakdown holds no team entries.
+  bool get isEmpty => stats.isEmpty;
+
+  /// The COPRS stats for [teamKey], or null when that team is absent.
+  Map<String, num>? operator [](String teamKey) => stats[teamKey];
+}

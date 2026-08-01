@@ -10,7 +10,7 @@ final team = await client.getTeam(1234);
 final matches = await client.getEventMatches('2026txhou');
 ```
 
-Covers teams, team avatars (media), events, event team lists, and match schedules, decoded into plain Dart models. The `TbaConfig` seam decides where the `X-TBA-Auth-Key` comes from: `CompileTimeTbaConfig` reads a `--dart-define=TBA_API_KEY`, `InMemoryTbaConfig` holds one directly, and your app can implement the interface to resolve keys from anywhere (the source app chains a Firestore-stored team key). A missing key throws `TbaApiKeyMissingException` before any request goes out.
+Covers teams, team avatars (media), events, event team lists, match schedules, and component OPR (COPRS) breakdowns, decoded into plain Dart models. The `TbaConfig` seam decides where the `X-TBA-Auth-Key` comes from: `CompileTimeTbaConfig` reads a `--dart-define=TBA_API_KEY`, `InMemoryTbaConfig` holds one directly, and your app can implement the interface to resolve keys from anywhere (the source app chains a Firestore-stored team key). A missing key throws `TbaApiKeyMissingException` before any request goes out.
 
 ## Installation
 
@@ -54,6 +54,7 @@ final client = TbaClient(config: CompileTimeTbaConfig());
 | `getEvent(String eventKey)` | `GET /event/{key}` | `TbaEvent?` |
 | `getEventsForYear(int year)` | `GET /events/{year}` | `List<TbaEvent>` |
 | `getEventMatches(String eventKey)` | `GET /event/{key}/matches/simple` | `List<TbaScheduleMatch>` |
+| `getEventCoprs(String eventKey)` | `GET /event/{key}/coprs` | `TbaEventCoprs?` |
 | `getMatch(String matchKey)` | `GET /match/{key}` | `TbaMatch?` |
 
 Examples:
@@ -69,16 +70,22 @@ for (final m in matches) {
   print('${m.key} red=${m.redTeams} blue=${m.blueTeams}');
 }
 
-// First YouTube video attached to a match
-final match = await client.getMatch('2026cmptx_f1m1');
-final url = match?.youtubeVideo?.youtubeUrl;
-```
+// Event COPRS breakdown (component OPRs)
+final coprs = await client.getEventCoprs('2026cmptx');
+if (coprs != null) {
+  final statsFor254 = coprs['frc254'];
+  if (statsFor254 != null) {
+    final opr = statsFor254['OPR'];
+    print('OPR for frc254: \${opr ?? 'N/A'}');
+  }
+}
 
 ### Models
 
 - `TbaTeam` - `key`, `teamNumber`, `nickname`, `name`, and nullable `city` / `stateProv` / `country`. `displayLocation` joins the non-empty location parts with commas.
 - `TbaEvent` - `key`, `name`, `year`, and optional `week` (TBA weeks are zero-based; this model offsets to one-based), `country`, `stateProv`, `startDate`, `endDate`.
 - `TbaScheduleMatch` - `key`, `compLevel`, `matchNumber`, and `redTeams` / `blueTeams` as plain `int` team numbers (non-`frc`-prefixed keys are dropped). Missing `comp_level` defaults to `'qm'`.
+- `TbaEventCoprs` - component OPR breakdown. `eventKey` plus a `stats` map keyed by team key, where each inner map holds stat name to number pairs (`OPR`, `DPR`, `Foul Points`, ...). Stat names vary per game year, so the model carries an open map rather than named fields. Index a team with `coprs['frc254']`; `isEmpty` reports whether any teams are present. JSON rows with non-numeric values are skipped individually.
 - `TbaMatch` - `key` and a `List<TbaMatchVideo>`. `youtubeVideo` returns the first YouTube entry; `TbaMatchVideo.youtubeUrl` builds the watch URL.
 - `TbaApiStatus` - `currentSeason` and `maxSeason` from the `/status` endpoint.
 

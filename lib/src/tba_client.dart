@@ -118,6 +118,22 @@ class TbaClient {
         .toList(growable: false);
   }
 
+  /// `GET /event/{eventKey}/coprs` — component OPR breakdown for the event,
+  /// or null on 404. Each team maps to an open set of stat name -> number
+  /// pairs (OPR, DPR, Foul Points, ...); the stat names vary by game year,
+  /// so the model carries an open map rather than named fields. Needed by
+  /// SpectrumStrategy's Prematch redesign (#6).
+  Future<TbaEventCoprs?> getEventCoprs(String eventKey) async {
+    final body = await _get('/event/$eventKey/coprs');
+    if (body == null) {
+      return null;
+    }
+    return TbaEventCoprs.fromJson(
+      eventKey,
+      jsonDecode(body) as Map<String, dynamic>,
+    );
+  }
+
   /// `GET /match/{matchKey}` — returns the match with its video list, or
   /// null on 404.
   Future<TbaMatch?> getMatch(String matchKey) async {
