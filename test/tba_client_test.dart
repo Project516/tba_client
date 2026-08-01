@@ -608,6 +608,17 @@ void main() {
     expect(await client.getEventCoprs('doesnotexist'), isNull);
   });
 
+  test('TbaClient.getEventCoprs returns null on HTTP 200 with null body',
+      () async {
+    final mockClient =
+        MockClient((_) async => http.Response('null', 200));
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+    expect(await client.getEventCoprs('2026txhou'), isNull);
+  });
+
   test('TbaClient.getEventCoprs throws TbaApiException on server error',
       () async {
     final mockClient = MockClient((_) async => http.Response('boom', 500));

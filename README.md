@@ -76,7 +76,7 @@ if (coprs != null) {
   final statsFor254 = coprs['frc254'];
   if (statsFor254 != null) {
     final opr = statsFor254['OPR'];
-    print('OPR for frc254: \${opr ?? 'N/A'}');
+    print('OPR for frc254: ${opr ?? 'N/A'}');
   }
 }
 

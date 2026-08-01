@@ -128,9 +128,13 @@ class TbaClient {
     if (body == null) {
       return null;
     }
+    final decoded = jsonDecode(body);
+    if (decoded == null) {
+      return null;
+    }
     return TbaEventCoprs.fromJson(
       eventKey,
-      jsonDecode(body) as Map<String, dynamic>,
+      decoded as Map<String, dynamic>,
     );
   }
 
