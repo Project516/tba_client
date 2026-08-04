@@ -214,20 +214,24 @@ class TbaMatch {
 class TbaEventCoprs {
   TbaEventCoprs({required this.eventKey, required this.stats});
 
+  /// Parses the endpoint's own shape, which is **stat major**: the outer keys
+  /// are stat names and the inner keys are team keys. The first version of
+  /// this read the outer keys as team keys, which made every lookup miss
+  /// (issue #9).
   factory TbaEventCoprs.fromJson(
     String eventKey,
     Map<String, dynamic> json,
   ) {
     final stats = <String, Map<String, num>>{};
-    json.forEach((teamKey, value) {
+    json.forEach((statName, value) {
       if (value is Map) {
-        final teamStats = <String, num>{};
-        value.forEach((statName, statValue) {
+        final byTeam = <String, num>{};
+        value.forEach((teamKey, statValue) {
           if (statValue is num) {
-            teamStats[statName.toString()] = statValue;
+            byTeam[teamKey.toString()] = statValue;
           }
         });
-        stats[teamKey] = teamStats;
+        stats[statName.toString()] = byTeam;
       }
     });
     return TbaEventCoprs(eventKey: eventKey, stats: stats);
@@ -236,14 +240,87 @@ class TbaEventCoprs {
   /// The event key this COPRS breakdown belongs to, e.g. `2026txhou`.
   final String eventKey;
 
-  /// Per-team stat maps, keyed by team key (e.g. `frc254`). Each inner map
-  /// holds stat name to value pairs (e.g. `{"OPR": 45.2, "DPR": -3.1}`).
-  /// Entries with a non-numeric stat value are skipped.
+  /// Stat name to team-keyed values, mirroring the endpoint: for example
+  /// `{"foulPoints": {"frc254": 4.5}}`. Stat names vary by game year and mix
+  /// human-readable (`Total Coral Points`) with raw camelCase
+  /// (`teleopCoralPoints`), so they cannot be enumerated ahead of time.
+  /// Entries with a non-numeric value are skipped.
+  ///
+  /// Note this endpoint carries *component* OPRs only. Plain OPR, DPR and
+  /// CCWM are not among these stat names; they come from [TbaEventOprs].
   final Map<String, Map<String, num>> stats;
 
-  /// Whether the breakdown holds no team entries.
+  /// Whether the breakdown holds no stats.
   bool get isEmpty => stats.isEmpty;
 
-  /// The COPRS stats for [teamKey], or null when that team is absent.
-  Map<String, num>? operator [](String teamKey) => stats[teamKey];
+  /// Every stat name present, in the order the endpoint returned them. This is
+  /// what a column picker offers, since the set changes every season.
+  Iterable<String> get statNames => stats.keys;
+
+  /// The team-keyed values for [statName], or null when absent.
+  Map<String, num>? operator [](String statName) => stats[statName];
+
+  /// Every stat this event reports for [teamKey], as stat name to value.
+  /// Derived rather than stored, so it cannot fall out of step with [stats].
+  /// Empty when the team did not attend.
+  Map<String, num> forTeam(String teamKey) {
+    final result = <String, num>{};
+    stats.forEach((statName, byTeam) {
+      final value = byTeam[teamKey];
+      if (value != null) {
+        result[statName] = value;
+      }
+    });
+    return result;
+  }
+}
+
+/// `GET /event/{eventKey}/oprs`: plain OPR, DPR and CCWM for an event.
+///
+/// Separate from [TbaEventCoprs] because TBA serves them separately, and
+/// because the COPRs endpoint does not include OPR at all -- a consumer
+/// wanting an OPR column has to come here for it (issue #9).
+class TbaEventOprs {
+  TbaEventOprs({
+    required this.eventKey,
+    required this.oprs,
+    required this.dprs,
+    required this.ccwms,
+  });
+
+  factory TbaEventOprs.fromJson(String eventKey, Map<String, dynamic> json) {
+    Map<String, num> section(String name) {
+      final raw = json[name];
+      if (raw is! Map) return const <String, num>{};
+      final result = <String, num>{};
+      raw.forEach((teamKey, value) {
+        if (value is num) {
+          result[teamKey.toString()] = value;
+        }
+      });
+      return result;
+    }
+
+    return TbaEventOprs(
+      eventKey: eventKey,
+      oprs: section('oprs'),
+      dprs: section('dprs'),
+      ccwms: section('ccwms'),
+    );
+  }
+
+  /// The event key this breakdown belongs to, e.g. `2026txhou`.
+  final String eventKey;
+
+  /// Offensive power rating per team, keyed by team key (e.g. `frc254`).
+  final Map<String, num> oprs;
+
+  /// Defensive power rating per team.
+  final Map<String, num> dprs;
+
+  /// Calculated contribution to win margin per team.
+  final Map<String, num> ccwms;
+
+  /// Whether every section came back empty.
+  bool get isEmpty => oprs.isEmpty && dprs.isEmpty && ccwms.isEmpty;
 }

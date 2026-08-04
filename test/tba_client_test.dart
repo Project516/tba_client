@@ -553,8 +553,25 @@ void main() {
   // getEventCoprs
   // ---------------------------------------------------------------------------
 
+  // The payload below is the real shape, trimmed from a live call to
+  // /event/2025txhou/coprs. It is stat major: stat name outer, team key inner.
+  // The first version of these tests asserted the transpose of this, which is
+  // why the inverted parse shipped (#9). Note there is no OPR key -- these are
+  // component OPRs, and the names are a mix of human-readable and camelCase.
+  const coprsPayload = <String, dynamic>{
+    'Total Coral Points': <String, dynamic>{
+      'frc254': 45.2,
+      'frc1678': 52.8,
+    },
+    'foulPoints': <String, dynamic>{'frc254': 3.1, 'frc1678': 2.0},
+    'teleopCoralCount': <String, dynamic>{
+      'frc254': 12.5,
+      // Absent for frc1678 on purpose: not every team reports every stat.
+    },
+  };
+
   test(
-    'TbaClient.getEventCoprs sends correct path and parses the breakdown',
+    'TbaClient.getEventCoprs sends correct path and parses stat major',
     () async {
       final mockClient = MockClient((request) async {
         expect(request.headers['X-TBA-Auth-Key'], 'test-key');
@@ -563,18 +580,7 @@ void main() {
           'https://www.thebluealliance.com/api/v3/event/2026txhou/coprs',
         );
         return http.Response(
-          jsonEncode(<String, dynamic>{
-            'frc254': <String, dynamic>{
-              'OPR': 45.2,
-              'DPR': -3.1,
-              'Foul Points': 3.1,
-            },
-            'frc1678': <String, dynamic>{
-              'OPR': 52.8,
-              'DPR': -2.0,
-              'Foul Points': 2.0,
-            },
-          }),
+          jsonEncode(coprsPayload),
           200,
           headers: <String, String>{'content-type': 'application/json'},
         );
@@ -589,15 +595,51 @@ void main() {
       expect(coprs, isNotNull);
       expect(coprs!.eventKey, '2026txhou');
       expect(coprs.isEmpty, isFalse);
-      expect(coprs.stats, hasLength(2));
-      expect(coprs['frc254'], isNotNull);
-      expect(coprs['frc254']!['OPR'], 45.2);
-      expect(coprs['frc254']!['DPR'], -3.1);
-      expect(coprs['frc254']!['Foul Points'], 3.1);
-      expect(coprs['frc1678']!['OPR'], 52.8);
+
+      // Keyed by stat, not by team. A team key must not resolve as a stat.
+      expect(coprs.stats, hasLength(3));
+      expect(coprs.statNames, <String>[
+        'Total Coral Points',
+        'foulPoints',
+        'teleopCoralCount',
+      ]);
+      expect(coprs['Total Coral Points']!['frc254'], 45.2);
+      expect(coprs['foulPoints']!['frc1678'], 2.0);
+      expect(
+        coprs['frc254'],
+        isNull,
+        reason: 'a team key is not a stat name; that was the #9 inversion',
+      );
       expect(coprs['nonexistent'], isNull);
     },
   );
+
+  test('TbaEventCoprs.forTeam gathers one team across every stat', () {
+    final coprs = TbaEventCoprs.fromJson('2026txhou', coprsPayload);
+
+    expect(coprs.forTeam('frc254'), <String, num>{
+      'Total Coral Points': 45.2,
+      'foulPoints': 3.1,
+      'teleopCoralCount': 12.5,
+    });
+    // Stats the team has no entry for are left out rather than zero-filled: a
+    // missing component is not a component worth zero.
+    expect(coprs.forTeam('frc1678'), <String, num>{
+      'Total Coral Points': 52.8,
+      'foulPoints': 2.0,
+    });
+    expect(coprs.forTeam('frc9999'), isEmpty);
+  });
+
+  test('TbaEventCoprs drops a stat whose value is not a map', () {
+    final coprs = TbaEventCoprs.fromJson('2026txhou', <String, dynamic>{
+      'foulPoints': <String, dynamic>{'frc254': 3.1},
+      'notAMap': 'nonsense',
+    });
+
+    expect(coprs.stats, hasLength(1));
+    expect(coprs['foulPoints'], <String, num>{'frc254': 3.1});
+  });
 
   test('TbaClient.getEventCoprs returns null on 404', () async {
     final mockClient = MockClient((_) async => http.Response('', 404));
@@ -635,38 +677,131 @@ void main() {
     );
   });
 
+  // ---------------------------------------------------------------------------
+  // getEventOprs
+  // ---------------------------------------------------------------------------
+
+  test('TbaClient.getEventOprs sends correct path and parses each section',
+      () async {
+    final mockClient = MockClient((request) async {
+      expect(request.headers['X-TBA-Auth-Key'], 'test-key');
+      expect(
+        request.url.toString(),
+        'https://www.thebluealliance.com/api/v3/event/2026txhou/oprs',
+      );
+      return http.Response(
+        jsonEncode(<String, dynamic>{
+          'oprs': <String, dynamic>{'frc254': 45.2, 'frc1678': 52.8},
+          'dprs': <String, dynamic>{'frc254': -3.1, 'frc1678': -2.0},
+          'ccwms': <String, dynamic>{'frc254': 48.3, 'frc1678': 54.8},
+        }),
+        200,
+        headers: <String, String>{'content-type': 'application/json'},
+      );
+    });
+
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+
+    final oprs = await client.getEventOprs('2026txhou');
+    expect(oprs, isNotNull);
+    expect(oprs!.eventKey, '2026txhou');
+    expect(oprs.isEmpty, isFalse);
+    // This is where a plain OPR column comes from; the coprs payload has none.
+    expect(oprs.oprs['frc254'], 45.2);
+    expect(oprs.dprs['frc1678'], -2.0);
+    expect(oprs.ccwms['frc254'], 48.3);
+  });
+
+  test('TbaEventOprs tolerates missing or malformed sections', () {
+    final oprs = TbaEventOprs.fromJson('2026txhou', <String, dynamic>{
+      'oprs': <String, dynamic>{'frc254': 45.2, 'frc1678': 'nonsense'},
+      // dprs absent entirely, ccwms the wrong type.
+      'ccwms': 'nonsense',
+    });
+
+    expect(oprs.oprs, <String, num>{'frc254': 45.2});
+    expect(oprs.dprs, isEmpty);
+    expect(oprs.ccwms, isEmpty);
+    expect(oprs.isEmpty, isFalse);
+  });
+
+  test('TbaClient.getEventOprs returns null on 404', () async {
+    final mockClient = MockClient((_) async => http.Response('', 404));
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+    expect(await client.getEventOprs('doesnotexist'), isNull);
+  });
+
+  test('TbaClient.getEventOprs returns null on HTTP 200 with null body',
+      () async {
+    final mockClient = MockClient((_) async => http.Response('null', 200));
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+    expect(await client.getEventOprs('2026txhou'), isNull);
+  });
+
+  test('TbaClient.getEventOprs throws TbaApiException on server error',
+      () async {
+    final mockClient = MockClient((_) async => http.Response('boom', 500));
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+    await expectLater(
+      client.getEventOprs('2026txhou'),
+      throwsA(
+        isA<TbaApiException>()
+            .having((e) => e.statusCode, 'statusCode', 500)
+            .having((e) => e.body, 'body', 'boom'),
+      ),
+    );
+  });
+
   test('TbaEventCoprs.fromJson parses an empty breakdown as empty', () {
-    // An empty top-level object ({}) still deserializes into a (zero-team)
+    // An empty top-level object ({}) still deserializes into a (zero-stat)
     // TbaEventCoprs rather than null; the null path is only for 404.
     final coprs = TbaEventCoprs.fromJson('2026txhou', <String, dynamic>{});
     expect(coprs.eventKey, '2026txhou');
     expect(coprs.isEmpty, isTrue);
     expect(coprs.stats, isEmpty);
+    expect(coprs.statNames, isEmpty);
+    expect(coprs.forTeam('frc254'), isEmpty);
   });
 
-  test('TbaEventCoprs.fromJson skips non-numeric stat values', () {
+  test('TbaEventCoprs.fromJson skips non-numeric team values', () {
+    // Stat major throughout: outer keys are stat names, inner keys are teams.
     final coprs = TbaEventCoprs.fromJson('2026txhou', <String, dynamic>{
-      'frc254': <String, dynamic>{
-        'OPR': 45.2,
-        'notes': 'not a number',
-        'ccwm': 12.5,
+      'foulPoints': <String, dynamic>{
+        'frc254': 45.2,
+        'frc9999': 'not a number',
+        'frc1678': 12.5,
       },
-      'frc1678': <String, dynamic>{
-        'OPR': 'unavailable',
+      'teleopCoralCount': <String, dynamic>{
+        'frc254': 'unavailable',
       },
-      'not_a_team': <String, dynamic>{
-        'OPR': 1.0,
+      'Total Coral Points': <String, dynamic>{
+        'frc254': 1.0,
       },
     });
     expect(coprs.stats, hasLength(3));
-    // Numeric stats are kept; the string gets dropped from the inner map.
-    expect(coprs['frc254']!, hasLength(2));
-    expect(coprs['frc254']!['OPR'], 45.2);
-    expect(coprs['frc254']!['ccwm'], 12.5);
-    expect(coprs['frc254']!.containsKey('notes'), isFalse);
-    // Every stat dropped from frc1678 leaves an empty (but present) inner map.
-    expect(coprs['frc1678']!, isEmpty);
-    expect(coprs['not_a_team']!['OPR'], 1.0);
+    // Numeric entries are kept; the string gets dropped from the inner map.
+    expect(coprs['foulPoints']!, hasLength(2));
+    expect(coprs['foulPoints']!['frc254'], 45.2);
+    expect(coprs['foulPoints']!['frc1678'], 12.5);
+    expect(coprs['foulPoints']!.containsKey('frc9999'), isFalse);
+    // Every team dropped leaves an empty (but present) inner map, so the stat
+    // still shows up in a column picker even though nobody has a value yet.
+    expect(coprs['teleopCoralCount']!, isEmpty);
+    expect(coprs['Total Coral Points']!['frc254'], 1.0);
+    // The dropped entry is dropped from the team view too, not zero-filled.
+    expect(coprs.forTeam('frc9999'), isEmpty);
   });
 
   // ---------------------------------------------------------------------------
