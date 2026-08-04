@@ -119,10 +119,12 @@ class TbaClient {
   }
 
   /// `GET /event/{eventKey}/coprs` — component OPR breakdown for the event,
-  /// or null on 404. Each team maps to an open set of stat name -> number
-  /// pairs (OPR, DPR, Foul Points, ...); the stat names vary by game year,
-  /// so the model carries an open map rather than named fields. Needed by
-  /// SpectrumStrategy's Prematch redesign (#6).
+  /// or null on 404.
+  ///
+  /// Stat major, matching the endpoint: stat name -> team key -> value. The
+  /// stat names are game specific and change every season, so the model keeps
+  /// an open map rather than named fields. Component OPRs only: plain OPR,
+  /// DPR and CCWM are not here, see [getEventOprs] (#6, #9).
   Future<TbaEventCoprs?> getEventCoprs(String eventKey) async {
     final body = await _get('/event/$eventKey/coprs');
     if (body == null) {
@@ -133,6 +135,24 @@ class TbaClient {
       return null;
     }
     return TbaEventCoprs.fromJson(
+      eventKey,
+      decoded as Map<String, dynamic>,
+    );
+  }
+
+  /// `GET /event/{eventKey}/oprs` — plain OPR, DPR and CCWM per team, or null
+  /// on 404. A separate call from [getEventCoprs] because TBA serves them
+  /// separately and the COPRs payload has no OPR in it (#9).
+  Future<TbaEventOprs?> getEventOprs(String eventKey) async {
+    final body = await _get('/event/$eventKey/oprs');
+    if (body == null) {
+      return null;
+    }
+    final decoded = jsonDecode(body);
+    if (decoded == null) {
+      return null;
+    }
+    return TbaEventOprs.fromJson(
       eventKey,
       decoded as Map<String, dynamic>,
     );
