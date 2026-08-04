@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Add `getEventCoprs` method to fetch component OPR (COPRS) breakdown for an
   event, needed by SpectrumStrategy. The COPRS response varies by game year,
