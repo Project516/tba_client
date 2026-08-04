@@ -550,6 +550,126 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // getEventCoprs
+  // ---------------------------------------------------------------------------
+
+  test(
+    'TbaClient.getEventCoprs sends correct path and parses the breakdown',
+    () async {
+      final mockClient = MockClient((request) async {
+        expect(request.headers['X-TBA-Auth-Key'], 'test-key');
+        expect(
+          request.url.toString(),
+          'https://www.thebluealliance.com/api/v3/event/2026txhou/coprs',
+        );
+        return http.Response(
+          jsonEncode(<String, dynamic>{
+            'frc254': <String, dynamic>{
+              'OPR': 45.2,
+              'DPR': -3.1,
+              'Foul Points': 3.1,
+            },
+            'frc1678': <String, dynamic>{
+              'OPR': 52.8,
+              'DPR': -2.0,
+              'Foul Points': 2.0,
+            },
+          }),
+          200,
+          headers: <String, String>{'content-type': 'application/json'},
+        );
+      });
+
+      final client = TbaClient(
+        config: InMemoryTbaConfig('test-key'),
+        httpClient: mockClient,
+      );
+
+      final coprs = await client.getEventCoprs('2026txhou');
+      expect(coprs, isNotNull);
+      expect(coprs!.eventKey, '2026txhou');
+      expect(coprs.isEmpty, isFalse);
+      expect(coprs.stats, hasLength(2));
+      expect(coprs['frc254'], isNotNull);
+      expect(coprs['frc254']!['OPR'], 45.2);
+      expect(coprs['frc254']!['DPR'], -3.1);
+      expect(coprs['frc254']!['Foul Points'], 3.1);
+      expect(coprs['frc1678']!['OPR'], 52.8);
+      expect(coprs['nonexistent'], isNull);
+    },
+  );
+
+  test('TbaClient.getEventCoprs returns null on 404', () async {
+    final mockClient = MockClient((_) async => http.Response('', 404));
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+    expect(await client.getEventCoprs('doesnotexist'), isNull);
+  });
+
+  test('TbaClient.getEventCoprs returns null on HTTP 200 with null body',
+      () async {
+    final mockClient = MockClient((_) async => http.Response('null', 200));
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+    expect(await client.getEventCoprs('2026txhou'), isNull);
+  });
+
+  test('TbaClient.getEventCoprs throws TbaApiException on server error',
+      () async {
+    final mockClient = MockClient((_) async => http.Response('boom', 500));
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+    await expectLater(
+      client.getEventCoprs('2026txhou'),
+      throwsA(
+        isA<TbaApiException>()
+            .having((e) => e.statusCode, 'statusCode', 500)
+            .having((e) => e.body, 'body', 'boom'),
+      ),
+    );
+  });
+
+  test('TbaEventCoprs.fromJson parses an empty breakdown as empty', () {
+    // An empty top-level object ({}) still deserializes into a (zero-team)
+    // TbaEventCoprs rather than null; the null path is only for 404.
+    final coprs = TbaEventCoprs.fromJson('2026txhou', <String, dynamic>{});
+    expect(coprs.eventKey, '2026txhou');
+    expect(coprs.isEmpty, isTrue);
+    expect(coprs.stats, isEmpty);
+  });
+
+  test('TbaEventCoprs.fromJson skips non-numeric stat values', () {
+    final coprs = TbaEventCoprs.fromJson('2026txhou', <String, dynamic>{
+      'frc254': <String, dynamic>{
+        'OPR': 45.2,
+        'notes': 'not a number',
+        'ccwm': 12.5,
+      },
+      'frc1678': <String, dynamic>{
+        'OPR': 'unavailable',
+      },
+      'not_a_team': <String, dynamic>{
+        'OPR': 1.0,
+      },
+    });
+    expect(coprs.stats, hasLength(3));
+    // Numeric stats are kept; the string gets dropped from the inner map.
+    expect(coprs['frc254']!, hasLength(2));
+    expect(coprs['frc254']!['OPR'], 45.2);
+    expect(coprs['frc254']!['ccwm'], 12.5);
+    expect(coprs['frc254']!.containsKey('notes'), isFalse);
+    // Every stat dropped from frc1678 leaves an empty (but present) inner map.
+    expect(coprs['frc1678']!, isEmpty);
+    expect(coprs['not_a_team']!['OPR'], 1.0);
+  });
+
+  // ---------------------------------------------------------------------------
   // Model parsing edge cases
   // ---------------------------------------------------------------------------
 
