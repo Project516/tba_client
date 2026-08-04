@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.4.0
+
+- `TbaScheduleMatch` now carries the rest of the match payload it was dropping:
+  `redScore`/`blueScore`, `winningAlliance`, `scheduledTime`/`predictedTime`/
+  `actualTime`, `videos`, and the game-specific `scoreBreakdown`. An unplayed
+  match reports null scores rather than TBA's `-1`, and `isPlayed`/`isTie`
+  separate "no result yet" from a genuine tie, which a bare
+  `winning_alliance` cannot (both are an empty string).
+- Add `getEventRankings` and `TbaEventRankings`/`TbaTeamRanking` for
+  `/event/{key}/rankings`. Sort-order values are positional and game specific,
+  so `sortOrdersFor` pairs them with the payload's own `sort_order_info` names
+  rather than hardcoding a season's columns.
+- Add `getEventAlliances` and `TbaEventAlliances`/`TbaAlliance` for
+  `/event/{key}/alliances`. Pick order is preserved and never sorted.
+- Add `getEventAwards` and `TbaEventAwards`/`TbaAward` for
+  `/event/{key}/awards`, distinguishing team awards from individual ones.
+- `TbaMatchVideo.listFromJson` is shared by `TbaMatch` and
+  `TbaScheduleMatch` so the two cannot drift.
+
+Additive: no existing field or method changed shape (#11).
+
 ## 0.3.0
 
 - **Breaking:** `TbaEventCoprs` now parses the COPRS payload the way the

@@ -906,4 +906,295 @@ void main() {
     // Should not throw.
     client.close();
   });
+
+  // ---------------------------------------------------------------------------
+  // #11: event-page coverage
+  // ---------------------------------------------------------------------------
+
+  test('TbaScheduleMatch reads scores, winner, times, videos and breakdown',
+      () {
+    final match = TbaScheduleMatch.fromJson(<String, dynamic>{
+      'key': '2025flor_qm14',
+      'comp_level': 'qm',
+      'match_number': 14,
+      'alliances': <String, dynamic>{
+        'red': <String, dynamic>{
+          'team_keys': <String>['frc254', 'frc118', 'frc2056'],
+          'score': 87,
+        },
+        'blue': <String, dynamic>{
+          'team_keys': <String>['frc971', 'frc1323', 'frc33'],
+          'score': 74,
+        },
+      },
+      'winning_alliance': 'red',
+      'time': 1750000000,
+      'predicted_time': 1750000600,
+      'actual_time': 1750000900,
+      'videos': <Map<String, dynamic>>[
+        <String, dynamic>{'type': 'youtube', 'key': 'abc123'},
+      ],
+      'score_breakdown': <String, dynamic>{
+        'red': <String, dynamic>{'rp': 3, 'foulPoints': 4},
+        'blue': <String, dynamic>{'rp': 1},
+      },
+    });
+
+    expect(match.redScore, 87);
+    expect(match.blueScore, 74);
+    expect(match.winningAlliance, 'red');
+    expect(match.isPlayed, isTrue);
+    expect(match.isTie, isFalse);
+    // Derived from the epoch rather than a hand-written date, so the assertion
+    // cannot be wrong about the arithmetic the way a literal can.
+    expect(
+      match.predictedTime,
+      DateTime.fromMillisecondsSinceEpoch(1750000600 * 1000, isUtc: true),
+    );
+    expect(match.predictedTime!.isUtc, isTrue);
+    expect(
+      match.actualTime,
+      DateTime.fromMillisecondsSinceEpoch(1750000900 * 1000, isUtc: true),
+    );
+    expect(match.videos.single.key, 'abc123');
+    expect(match.scoreBreakdown['red']!['rp'], 3);
+  });
+
+  test('an unplayed match has null scores, not -1', () {
+    // TBA sends -1 rather than null before a match runs. Passing it through
+    // would render as a real score of minus one.
+    final match = TbaScheduleMatch.fromJson(<String, dynamic>{
+      'key': '2025flor_qm99',
+      'comp_level': 'qm',
+      'match_number': 99,
+      'alliances': <String, dynamic>{
+        'red': <String, dynamic>{
+          'team_keys': <String>['frc254'],
+          'score': -1
+        },
+        'blue': <String, dynamic>{
+          'team_keys': <String>['frc971'],
+          'score': -1
+        },
+      },
+      'winning_alliance': '',
+    });
+
+    expect(match.redScore, isNull);
+    expect(match.blueScore, isNull);
+    expect(match.winningAlliance, isNull);
+    expect(match.isPlayed, isFalse);
+    expect(match.isTie, isFalse, reason: 'unplayed is not a tie');
+    expect(match.videos, isEmpty);
+    expect(match.scoreBreakdown, isEmpty);
+  });
+
+  test('a genuine tie is played with no winner', () {
+    // TBA sends an empty winning_alliance for a tie as well as for unplayed, so
+    // the scores are what tell them apart.
+    final match = TbaScheduleMatch.fromJson(<String, dynamic>{
+      'key': '2025flor_qm7',
+      'comp_level': 'qm',
+      'match_number': 7,
+      'alliances': <String, dynamic>{
+        'red': <String, dynamic>{
+          'team_keys': <String>['frc254'],
+          'score': 60
+        },
+        'blue': <String, dynamic>{
+          'team_keys': <String>['frc971'],
+          'score': 60
+        },
+      },
+      'winning_alliance': '',
+    });
+
+    expect(match.isPlayed, isTrue);
+    expect(match.isTie, isTrue);
+    expect(match.winningAlliance, isNull);
+  });
+
+  test('a scoreless played match is not mistaken for unplayed', () {
+    final match = TbaScheduleMatch.fromJson(<String, dynamic>{
+      'key': '2025flor_qm8',
+      'comp_level': 'qm',
+      'match_number': 8,
+      'alliances': <String, dynamic>{
+        'red': <String, dynamic>{
+          'team_keys': <String>['frc254'],
+          'score': 0
+        },
+        'blue': <String, dynamic>{
+          'team_keys': <String>['frc971'],
+          'score': 12
+        },
+      },
+      'winning_alliance': 'blue',
+    });
+
+    expect(match.redScore, 0);
+    expect(match.isPlayed, isTrue);
+  });
+
+  test('TbaClient.getEventRankings parses rows and names the sort orders',
+      () async {
+    final mockClient = MockClient((request) async {
+      expect(
+        request.url.toString(),
+        'https://www.thebluealliance.com/api/v3/event/2026txhou/rankings',
+      );
+      return http.Response(
+        jsonEncode(<String, dynamic>{
+          'sort_order_info': <Map<String, dynamic>>[
+            <String, dynamic>{'name': 'Ranking Score'},
+            <String, dynamic>{'name': 'Avg Coral'},
+          ],
+          'rankings': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'rank': 1,
+              'team_key': 'frc254',
+              'record': <String, dynamic>{'wins': 8, 'losses': 2, 'ties': 0},
+              'matches_played': 10,
+              'dq': 0,
+              'qual_average': 72.5,
+              'sort_orders': <num>[2.4, 18.2],
+            },
+          ],
+        }),
+        200,
+      );
+    });
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+
+    final rankings = await client.getEventRankings('2026txhou');
+    expect(rankings, isNotNull);
+    final row = rankings!.rankings.single;
+    expect(row.rank, 1);
+    expect(row.record, '8-2-0');
+    expect(row.qualAverage, 72.5);
+    // Paired by position, because the names are season specific.
+    expect(rankings.sortOrdersFor(row), <String, num>{
+      'Ranking Score': 2.4,
+      'Avg Coral': 18.2,
+    });
+  });
+
+  test('sortOrdersFor drops values with no name to label them', () {
+    final rankings = TbaEventRankings.fromJson('2026txhou', <String, dynamic>{
+      'sort_order_info': <Map<String, dynamic>>[
+        <String, dynamic>{'name': 'Ranking Score'},
+      ],
+      'rankings': <Map<String, dynamic>>[
+        <String, dynamic>{
+          'rank': 1,
+          'team_key': 'frc254',
+          'sort_orders': <num>[2.4, 18.2, 9.9],
+        },
+      ],
+    });
+
+    // A column nobody can label is not worth showing.
+    expect(rankings.sortOrdersFor(rankings.rankings.single), <String, num>{
+      'Ranking Score': 2.4,
+    });
+  });
+
+  test('TbaClient.getEventRankings returns null before rankings exist',
+      () async {
+    // TBA answers a literal null here pre-event, which is not an error.
+    final mockClient = MockClient((_) async => http.Response('null', 200));
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+    expect(await client.getEventRankings('2026txhou'), isNull);
+  });
+
+  test('TbaClient.getEventAlliances keeps pick order', () async {
+    final mockClient = MockClient((request) async {
+      expect(
+        request.url.toString(),
+        'https://www.thebluealliance.com/api/v3/event/2026txhou/alliances',
+      );
+      return http.Response(
+        jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'name': 'Alliance 1',
+            'picks': <String>['frc254', 'frc118', 'frc2056'],
+            'status': <String, dynamic>{
+              'level': 'f',
+              'record': <String, dynamic>{'wins': 6, 'losses': 1, 'ties': 0},
+            },
+          },
+        ]),
+        200,
+      );
+    });
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+
+    final alliances = await client.getEventAlliances('2026txhou');
+    final first = alliances!.alliances.single;
+    // Who picked whom is the interesting part, so order is never sorted.
+    expect(first.picks, <String>['frc254', 'frc118', 'frc2056']);
+    expect(first.captain, 'frc254');
+    expect(first.status, 'f');
+    expect(first.record, '6-1-0');
+  });
+
+  test('TbaClient.getEventAwards separates team and individual awards',
+      () async {
+    final mockClient = MockClient((request) async {
+      expect(
+        request.url.toString(),
+        'https://www.thebluealliance.com/api/v3/event/2026txhou/awards',
+      );
+      return http.Response(
+        jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'name': 'Industrial Design Award',
+            'award_type': 16,
+            'recipient_list': <Map<String, dynamic>>[
+              <String, dynamic>{'team_key': 'frc254', 'awardee': null},
+            ],
+          },
+          <String, dynamic>{
+            'name': "Dean's List Finalist",
+            'award_type': 4,
+            'recipient_list': <Map<String, dynamic>>[
+              <String, dynamic>{'team_key': 'frc971', 'awardee': 'A Student'},
+            ],
+          },
+        ]),
+        200,
+      );
+    });
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+
+    final awards = await client.getEventAwards('2026txhou');
+    expect(awards!.awards, hasLength(2));
+    expect(awards.awards.first.recipients.single.awardee, isNull);
+    expect(awards.awards.last.recipients.single.awardee, 'A Student');
+    expect(awards.forTeam('frc254'), hasLength(1));
+    expect(awards.forTeam('frc9999'), isEmpty);
+  });
+
+  test('the three new endpoints return null on 404', () async {
+    final mockClient = MockClient((_) async => http.Response('', 404));
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+    expect(await client.getEventRankings('nope'), isNull);
+    expect(await client.getEventAlliances('nope'), isNull);
+    expect(await client.getEventAwards('nope'), isNull);
+  });
 }
