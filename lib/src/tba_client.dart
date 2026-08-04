@@ -158,6 +158,50 @@ class TbaClient {
     );
   }
 
+  /// `GET /event/{eventKey}/rankings` — the qualification ranking table, or
+  /// null on 404 and for events that publish none (#11).
+  Future<TbaEventRankings?> getEventRankings(String eventKey) async {
+    final body = await _get('/event/$eventKey/rankings');
+    if (body == null) {
+      return null;
+    }
+    final decoded = jsonDecode(body);
+    if (decoded is! Map<String, dynamic>) {
+      // TBA answers `null` for an event with no rankings yet, which is a normal
+      // pre-event state rather than an error.
+      return null;
+    }
+    return TbaEventRankings.fromJson(eventKey, decoded);
+  }
+
+  /// `GET /event/{eventKey}/alliances` — playoff alliances in pick order, or
+  /// null on 404 and before alliance selection has happened (#11).
+  Future<TbaEventAlliances?> getEventAlliances(String eventKey) async {
+    final body = await _get('/event/$eventKey/alliances');
+    if (body == null) {
+      return null;
+    }
+    final decoded = jsonDecode(body);
+    if (decoded is! List) {
+      return null;
+    }
+    return TbaEventAlliances.fromJson(eventKey, decoded);
+  }
+
+  /// `GET /event/{eventKey}/awards` — awards presented at the event, or null on
+  /// 404. An empty list is normal until the awards ceremony (#11).
+  Future<TbaEventAwards?> getEventAwards(String eventKey) async {
+    final body = await _get('/event/$eventKey/awards');
+    if (body == null) {
+      return null;
+    }
+    final decoded = jsonDecode(body);
+    if (decoded is! List) {
+      return null;
+    }
+    return TbaEventAwards.fromJson(eventKey, decoded);
+  }
+
   /// `GET /match/{matchKey}` — returns the match with its video list, or
   /// null on 404.
   Future<TbaMatch?> getMatch(String matchKey) async {
