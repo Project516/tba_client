@@ -513,6 +513,81 @@ void main() {
     expect(match.blueTeams, <int>[195, 1073, 5511]);
   });
 
+  test(
+    'TbaClient.getEventMatchesDetailed hits /matches and parses videos and '
+    'the score breakdown',
+    () async {
+      final mockClient = MockClient((request) async {
+        // The `simple` variant carries no `videos` and no `score_breakdown`, so
+        // parsing them off it always produced empty values regardless of the
+        // event (#15). This one has them.
+        expect(
+          request.url.toString(),
+          'https://www.thebluealliance.com/api/v3/event/2026txhou/matches',
+        );
+        return http.Response(
+          jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'key': '2026txhou_qm1',
+              'comp_level': 'qm',
+              'match_number': 1,
+              'winning_alliance': 'red',
+              'actual_time': 1786000000,
+              'alliances': <String, dynamic>{
+                'red': <String, dynamic>{
+                  'team_keys': <String>['frc254', 'frc148', 'frc973'],
+                  'score': 88,
+                },
+                'blue': <String, dynamic>{
+                  'team_keys': <String>['frc195', 'frc1073', 'frc5511'],
+                  'score': 74,
+                },
+              },
+              'videos': <Map<String, dynamic>>[
+                <String, dynamic>{'type': 'youtube', 'key': 'abc123'},
+              ],
+              'score_breakdown': <String, dynamic>{
+                'red': <String, dynamic>{'rp': 4, 'foulPoints': 5},
+                'blue': <String, dynamic>{'rp': 1, 'foulPoints': 0},
+              },
+            },
+          ]),
+          200,
+        );
+      });
+
+      final client = TbaClient(
+        config: InMemoryTbaConfig('test-key'),
+        httpClient: mockClient,
+      );
+
+      final match = (await client.getEventMatchesDetailed('2026txhou')).single;
+
+      expect(match.videos.single.type, 'youtube');
+      expect(match.videos.single.key, 'abc123');
+      // Open maps, like the COPRs stats: the keys change every season, so they
+      // are not modelled as named fields.
+      expect(match.scoreBreakdown['red']?['rp'], 4);
+      expect(match.scoreBreakdown['blue']?['rp'], 1);
+      // Everything the simple payload already gave still parses.
+      expect(match.redScore, 88);
+      expect(match.winningAlliance, 'red');
+      expect(match.actualTime, isNotNull);
+    },
+  );
+
+  test(
+    'TbaClient.getEventMatchesDetailed returns empty list on 404',
+    () async {
+      final mockClient = MockClient((_) async => http.Response('', 404));
+      final client = TbaClient(
+        config: InMemoryTbaConfig('test-key'),
+        httpClient: mockClient,
+      );
+      expect(await client.getEventMatchesDetailed('doesnotexist'), isEmpty);
+    },
+  );
+
   test('TbaClient.getEventMatches returns empty list on 404', () async {
     final mockClient = MockClient((_) async => http.Response('', 404));
     final client = TbaClient(

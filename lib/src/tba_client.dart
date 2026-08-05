@@ -104,8 +104,26 @@ class TbaClient {
 
   /// `GET /event/{eventKey}/matches/simple` — the event's match schedule.
   /// Used as the schedule fallback when Statbotics is down (#512).
-  Future<List<TbaScheduleMatch>> getEventMatches(String eventKey) async {
-    final body = await _get('/event/$eventKey/matches/simple');
+  ///
+  /// The `simple` payload carries the teams, the scores, the winner and the
+  /// three time fields, but **not** `videos` or `score_breakdown`. Use
+  /// [getEventMatchesDetailed] for those (#15).
+  Future<List<TbaScheduleMatch>> getEventMatches(String eventKey) =>
+      _matches('/event/$eventKey/matches/simple');
+
+  /// `GET /event/{eventKey}/matches` — the full match payload, which adds
+  /// `videos` and `score_breakdown` to what [getEventMatches] returns.
+  ///
+  /// A separate call rather than switching [getEventMatches] over, because a
+  /// score breakdown is large and the schedule is fetched on every event change
+  /// and again on every pull-to-refresh. A consumer that only wants the schedule
+  /// and the scores should not pay for breakdowns it will not read, which matters
+  /// on the venue wifi these consumers run on (#15).
+  Future<List<TbaScheduleMatch>> getEventMatchesDetailed(String eventKey) =>
+      _matches('/event/$eventKey/matches');
+
+  Future<List<TbaScheduleMatch>> _matches(String path) async {
+    final body = await _get(path);
     if (body == null) {
       return const <TbaScheduleMatch>[];
     }

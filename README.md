@@ -54,6 +54,7 @@ final client = TbaClient(config: CompileTimeTbaConfig());
 | `getEvent(String eventKey)` | `GET /event/{key}` | `TbaEvent?` |
 | `getEventsForYear(int year)` | `GET /events/{year}` | `List<TbaEvent>` |
 | `getEventMatches(String eventKey)` | `GET /event/{key}/matches/simple` | `List<TbaScheduleMatch>` |
+| `getEventMatchesDetailed(String eventKey)` | `GET /event/{key}/matches` | `List<TbaScheduleMatch>` |
 | `getEventOprs(String eventKey)` | `GET /event/{key}/oprs` | `TbaEventOprs?` |
 | `getEventCoprs(String eventKey)` | `GET /event/{key}/coprs` | `TbaEventCoprs?` |
 | `getEventRankings(String eventKey)` | `GET /event/{key}/rankings` | `TbaEventRankings?` |
