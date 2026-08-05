@@ -3,7 +3,7 @@
 ## Unreleased
 
 - `getEventMatchesDetailed`, reading `GET /event/{key}/matches`. The `simple`
-  variant `getEventMatches` reads carries no `videos` and no `score_breakdown`,
+  payload `getEventMatches` reads carries no `videos` and no `score_breakdown`,
   so `TbaScheduleMatch` always parsed those as empty no matter the event. Kept as
   a separate call rather than switching `getEventMatches` over: a score breakdown
   is large, and the schedule is refetched on every event change and every
