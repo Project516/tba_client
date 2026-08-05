@@ -10,7 +10,7 @@ final team = await client.getTeam(1234);
 final matches = await client.getEventMatches('2026txhou');
 ```
 
-Covers teams, team avatars (media), events, event team lists, match schedules, and component OPR (COPRS) breakdowns, decoded into plain Dart models. The `TbaConfig` seam decides where the `X-TBA-Auth-Key` comes from: `CompileTimeTbaConfig` reads a `--dart-define=TBA_API_KEY`, `InMemoryTbaConfig` holds one directly, and your app can implement the interface to resolve keys from anywhere (the source app chains a Firestore-stored team key). A missing key throws `TbaApiKeyMissingException` before any request goes out.
+Covers teams, team avatars (media), events, event team lists, match schedules, plain OPR/DPR/CCWM, component OPR (COPRS) breakdowns, qualification rankings, playoff alliances, and event awards, decoded into plain Dart models. The `TbaConfig` seam decides where the `X-TBA-Auth-Key` comes from: `CompileTimeTbaConfig` reads a `--dart-define=TBA_API_KEY`, `InMemoryTbaConfig` holds one directly, and your app can implement the interface to resolve keys from anywhere (the source app chains a Firestore-stored team key). A missing key throws `TbaApiKeyMissingException` before any request goes out.
 
 ## Installation
 
@@ -18,7 +18,7 @@ Add the dependency in `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  tba_client: ^0.1.0
+  tba_client: ^0.4.0
 ```
 
 Or pull the latest from Git:
@@ -43,7 +43,7 @@ final client = TbaClient(config: CompileTimeTbaConfig());
 
 ## API reference
 
-`TbaClient` targets `/api/v3` on `www.thebluealliance.com`. List endpoints return an empty list on 404; single-object endpoints return `null` on 404. Anything else outside 2xx throws `TbaApiException`. `getStatus` treats 404 as a hard error so you can tell a misconfigured base URL / bad key apart from a normal "not found".
+`TbaClient` targets `/api/v3` on `www.thebluealliance.com`. List endpoints return an empty list on 404; single-object endpoints return `null` on 404. Some event sub-resources (`getEventRankings`, `getEventAlliances`, `getEventAwards`, `getEventCoprs`, `getEventOprs`) also return `null` for a normal pre-event state (no rankings yet, no alliance selection, no awards ceremony), so a null is not an error. Anything else outside 2xx throws `TbaApiException`. `getStatus` treats 404 as a hard error so you can tell a misconfigured base URL / bad key apart from a normal "not found".
 
 | Method | Endpoint | Returns |
 | --- | --- | --- |
@@ -54,7 +54,11 @@ final client = TbaClient(config: CompileTimeTbaConfig());
 | `getEvent(String eventKey)` | `GET /event/{key}` | `TbaEvent?` |
 | `getEventsForYear(int year)` | `GET /events/{year}` | `List<TbaEvent>` |
 | `getEventMatches(String eventKey)` | `GET /event/{key}/matches/simple` | `List<TbaScheduleMatch>` |
+| `getEventOprs(String eventKey)` | `GET /event/{key}/oprs` | `TbaEventOprs?` |
 | `getEventCoprs(String eventKey)` | `GET /event/{key}/coprs` | `TbaEventCoprs?` |
+| `getEventRankings(String eventKey)` | `GET /event/{key}/rankings` | `TbaEventRankings?` |
+| `getEventAlliances(String eventKey)` | `GET /event/{key}/alliances` | `TbaEventAlliances?` |
+| `getEventAwards(String eventKey)` | `GET /event/{key}/awards` | `TbaEventAwards?` |
 | `getMatch(String matchKey)` | `GET /match/{key}` | `TbaMatch?` |
 
 Examples:
@@ -70,14 +74,22 @@ for (final m in matches) {
   print('${m.key} red=${m.redTeams} blue=${m.blueTeams}');
 }
 
-// Event COPRS breakdown (component OPRs)
+// Event COPRS breakdown (component OPRs). The payload is stat major:
+// outer key is the stat name, inner keys are team keys.
 final coprs = await client.getEventCoprs('2026cmptx');
 if (coprs != null) {
-  final statsFor254 = coprs['frc254'];
-  if (statsFor254 != null) {
-    final opr = statsFor254['OPR'];
-    print('OPR for frc254: ${opr ?? 'N/A'}');
-  }
+  final foulsFor254 = coprs['foulPoints']?['frc254'];
+  print('Foul points for frc254: ${foulsFor254 ?? 'N/A'}');
+
+  // Every component stat this event reports for one team.
+  final teamStats = coprs.forTeam('frc254');
+  print('Component stats for frc254: ${teamStats.keys.join(', ')}');
+}
+
+// Plain OPR, DPR and CCWM live in a separate payload (not in COPRS).
+final oprs = await client.getEventOprs('2026cmptx');
+if (oprs != null) {
+  print('OPR for frc254: ${oprs.oprs['frc254'] ?? 'N/A'}');
 }
 ```
 
@@ -86,7 +98,11 @@ if (coprs != null) {
 - `TbaTeam` - `key`, `teamNumber`, `nickname`, `name`, and nullable `city` / `stateProv` / `country`. `displayLocation` joins the non-empty location parts with commas.
 - `TbaEvent` - `key`, `name`, `year`, and optional `week` (TBA weeks are zero-based; this model offsets to one-based), `country`, `stateProv`, `startDate`, `endDate`.
 - `TbaScheduleMatch` - `key`, `compLevel`, `matchNumber`, and `redTeams` / `blueTeams` as plain `int` team numbers (non-`frc`-prefixed keys are dropped). Missing `comp_level` defaults to `'qm'`.
-- `TbaEventCoprs` - component OPR breakdown. `eventKey` plus a `stats` map keyed by team key, where each inner map holds stat name to number pairs (`OPR`, `DPR`, `Foul Points`, ...). Stat names vary per game year, so the model carries an open map rather than named fields. Index a team with `coprs['frc254']`; `isEmpty` reports whether any teams are present. JSON rows with non-numeric values are skipped individually.
+- `TbaEventCoprs` - component OPR breakdown. `eventKey` plus a `stats` map that is **stat major**: the outer keys are stat names and the inner keys are team keys (for example `{"foulPoints": {"frc254": 4.5}}`). Stat names vary per game year and mix human-readable labels (`Total Coral Points`) with raw camelCase (`teleopCoralPoints`), so the model carries an open map rather than named fields. `operator [](statName)` fetches a team-keyed column; `forTeam(teamKey)` returns every stat that team has as a map; `statNames` lists them; `isEmpty` reports whether any stats are present. Entries with non-numeric values are skipped individually. This endpoint carries **component** OPRs only: plain OPR, DPR and CCWM are not in this payload, use [TbaEventOprs] for those.
+- `TbaEventOprs` - plain OPR, DPR and CCWM per team for an event, as three team-keyed maps (`oprs`, `dprs`, `ccwms`). Separate from `TbaEventCoprs` because TBA serves them separately and the COPRS payload has no OPR in it. `isEmpty` reports whether every section came back empty.
+- `TbaEventRankings` - the qualification ranking table. `eventKey` plus `rankings` (one `TbaTeamRanking` per team in rank order) and `sortOrderNames`, the column names the payload pairs with each row's `sortOrders`. Those names are game-specific and change every season, so they are read from the payload rather than hardcoded. `sortOrdersFor(ranking)` pairs a row's values with its names for a table; extra values with no matching name are dropped. `isEmpty` reports whether any rows are present. `TbaTeamRanking` carries `teamKey`, `rank`, `teamNumber`, `wins`, `losses`, `ties`, `qualScore`, and `sortOrders` (positional).
+- `TbaEventAlliances` - playoff alliances in pick order. `eventKey` plus an `alliances` list of `TbaAlliance`. The order is preserved exactly as returned and never sorted: `picks` is team keys in pick order (captain first), `captain` is the first pick (or null when empty), `status` is how far the alliance got (e.g. `f`, `sf`, or empty), and `record` is the playoff record as `wins-losses-ties`. `isEmpty` reports whether any alliances are present.
+- `TbaEventAwards` - awards presented at an event. `eventKey` plus an `awards` list of `TbaAward`. Each `TbaAward` carries `name`, `awardType`, and `recipients` (`TbaAwardRecipient`), where a recipient may be a team, a person, or both, so team awards can be told apart from individual ones. `forTeam(teamKey)` returns every award that team received. `isEmpty` reports whether any awards are present.
 - `TbaMatch` - `key` and a `List<TbaMatchVideo>`. `youtubeVideo` returns the first YouTube entry; `TbaMatchVideo.youtubeUrl` builds the watch URL.
 - `TbaApiStatus` - `currentSeason` and `maxSeason` from the `/status` endpoint.
 
