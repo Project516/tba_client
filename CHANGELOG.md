@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
 - `getEventMatchesDetailed`, reading `GET /event/{key}/matches`. The `simple`
   payload `getEventMatches` reads carries no `videos` and no `score_breakdown`,
