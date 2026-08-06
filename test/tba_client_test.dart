@@ -151,6 +151,30 @@ void main() {
     },
   );
 
+  // An empty string is a deliberate "no key" rather than a one-byte key:
+  // CompileTimeTbaConfig maps an empty String.fromEnvironment value to null,
+  // and _execute treats an empty key as missing before any request goes out.
+  test(
+    'TbaClient throws TbaApiKeyMissingException when the key is empty',
+    () async {
+      var requests = 0;
+      final client = TbaClient(
+        config: InMemoryTbaConfig(''),
+        httpClient: MockClient((_) async {
+          requests++;
+          return http.Response('', 200);
+        }),
+      );
+
+      await expectLater(
+        client.getEventMatches('2026txhou'),
+        throwsA(isA<TbaApiKeyMissingException>()),
+      );
+      // The guard runs before the request, so nothing reached the network.
+      expect(requests, 0);
+    },
+  );
+
   test('TbaClient.getTeam accepts non-200 2xx success responses', () async {
     final mockClient = MockClient((_) async {
       return http.Response(
@@ -1272,4 +1296,38 @@ void main() {
     expect(await client.getEventAlliances('nope'), isNull);
     expect(await client.getEventAwards('nope'), isNull);
   });
+
+  // TBA answers the alliances and awards endpoints with a JSON array, but the
+  // defensive `is! List` guard lets a malformed 200 (a stray object, or a
+  // transport-layer redirect page that the mock did not expect) degrade to null
+  // the same way a 404 does, instead of crashing parseJson on a non-list.
+  test(
+    'TbaClient.getEventAlliances returns null on a 200 with a non-list body',
+    () async {
+      final mockClient = MockClient(
+        (_) async =>
+            http.Response(jsonEncode(<String, dynamic>{'error': 'x'}), 200),
+      );
+      final client = TbaClient(
+        config: InMemoryTbaConfig('test-key'),
+        httpClient: mockClient,
+      );
+      expect(await client.getEventAlliances('2026txhou'), isNull);
+    },
+  );
+
+  test(
+    'TbaClient.getEventAwards returns null on a 200 with a non-list body',
+    () async {
+      final mockClient = MockClient(
+        (_) async =>
+            http.Response(jsonEncode(<String, dynamic>{'error': 'x'}), 200),
+      );
+      final client = TbaClient(
+        config: InMemoryTbaConfig('test-key'),
+        httpClient: mockClient,
+      );
+      expect(await client.getEventAwards('2026txhou'), isNull);
+    },
+  );
 }
