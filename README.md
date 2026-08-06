@@ -12,23 +12,6 @@ final matches = await client.getEventMatches('2026txhou');
 
 Covers teams, team avatars (media), events, event team lists, match schedules, plain OPR/DPR/CCWM, component OPR (COPRS) breakdowns, qualification rankings, playoff alliances, and event awards, decoded into plain Dart models. The `TbaConfig` seam decides where the `X-TBA-Auth-Key` comes from: `CompileTimeTbaConfig` reads a `--dart-define=TBA_API_KEY`, `InMemoryTbaConfig` holds one directly, and your app can implement the interface to resolve keys from anywhere (the source app chains a Firestore-stored team key). A missing key throws `TbaApiKeyMissingException` before any request goes out.
 
-## Installation
-
-Add the dependency in `pubspec.yaml`:
-
-```yaml
-dependencies:
-  tba_client: ^0.4.0
-```
-
-Or pull the latest from Git:
-
-```yaml
-dependencies:
-  tba_client:
-    git: https://github.com/Project516/tba_client.git
-```
-
 ## API key resolution
 
 `TbaClient` needs a TBA auth key on every request (the `X-TBA-Auth-Key` header, preferred over the query-string form so CDN caching stays intact). Three out-of-the-box options, all injectable through `TbaConfig`:
