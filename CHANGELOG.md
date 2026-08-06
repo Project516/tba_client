@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+- No API change. Adds coverage for the empty-key guard and for award and
+  alliance payloads that arrive as something other than a list, so the tagged
+  version and its tests match.
+
 ## 0.5.0
 
 - `getEventMatchesDetailed`, reading `GET /event/{key}/matches`. The `simple`
