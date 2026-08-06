@@ -157,15 +157,21 @@ void main() {
   test(
     'TbaClient throws TbaApiKeyMissingException when the key is empty',
     () async {
+      var requests = 0;
       final client = TbaClient(
         config: InMemoryTbaConfig(''),
-        httpClient: MockClient((_) async => http.Response('', 200)),
+        httpClient: MockClient((_) async {
+          requests++;
+          return http.Response('', 200);
+        }),
       );
 
       await expectLater(
         client.getEventMatches('2026txhou'),
         throwsA(isA<TbaApiKeyMissingException>()),
       );
+      // The guard runs before the request, so nothing reached the network.
+      expect(requests, 0);
     },
   );
 
@@ -1299,7 +1305,8 @@ void main() {
     'TbaClient.getEventAlliances returns null on a 200 with a non-list body',
     () async {
       final mockClient = MockClient(
-        (_) async => http.Response(jsonEncode(<String, dynamic>{'error': 'x'}), 200),
+        (_) async =>
+            http.Response(jsonEncode(<String, dynamic>{'error': 'x'}), 200),
       );
       final client = TbaClient(
         config: InMemoryTbaConfig('test-key'),
@@ -1313,7 +1320,8 @@ void main() {
     'TbaClient.getEventAwards returns null on a 200 with a non-list body',
     () async {
       final mockClient = MockClient(
-        (_) async => http.Response(jsonEncode(<String, dynamic>{'error': 'x'}), 200),
+        (_) async =>
+            http.Response(jsonEncode(<String, dynamic>{'error': 'x'}), 200),
       );
       final client = TbaClient(
         config: InMemoryTbaConfig('test-key'),
