@@ -220,6 +220,45 @@ class TbaClient {
     return TbaEventAwards.fromJson(eventKey, decoded);
   }
 
+  /// `GET /event/{eventKey}/predictions` — TBA's own predicted scores, keyed by
+  /// match key.
+  ///
+  /// Empty rather than null when there is nothing to predict: TBA answers `{}`
+  /// before it has enough data, which is the normal state early at an event and
+  /// the permanent state at an offseason one. Qualification and playoff
+  /// predictions arrive under separate keys and are merged here, since the
+  /// match key already says which is which.
+  Future<Map<String, TbaMatchPrediction>> getEventPredictions(
+    String eventKey,
+  ) async {
+    final body = await _get('/event/$eventKey/predictions');
+    if (body == null) {
+      return const <String, TbaMatchPrediction>{};
+    }
+    final decoded = jsonDecode(body);
+    if (decoded is! Map) {
+      return const <String, TbaMatchPrediction>{};
+    }
+    final byLevel = decoded['match_predictions'];
+    if (byLevel is! Map) {
+      return const <String, TbaMatchPrediction>{};
+    }
+    final predictions = <String, TbaMatchPrediction>{};
+    for (final level in byLevel.values) {
+      if (level is! Map) continue;
+      for (final entry in level.entries) {
+        final key = entry.key;
+        final value = entry.value;
+        if (key is! String || key.isEmpty || value is! Map) continue;
+        predictions[key] = TbaMatchPrediction.fromJson(
+          key,
+          Map<String, dynamic>.from(value),
+        );
+      }
+    }
+    return Map<String, TbaMatchPrediction>.unmodifiable(predictions);
+  }
+
   /// `GET /match/{matchKey}` — returns the match with its video list, or
   /// null on 404.
   Future<TbaMatch?> getMatch(String matchKey) async {

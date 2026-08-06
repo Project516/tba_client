@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+
+- `getEventPredictions` reads `/event/{key}/predictions`, TBA's own predicted
+  outcome per match, merged across the qualification and playoff maps and keyed
+  by match key. `TbaMatchPrediction` carries the two predicted scores, the
+  alliance TBA expects to win, and its confidence in that call. The payload's
+  per-game component means and variances are deliberately not modelled: they are
+  renamed every season. An event with nothing to predict answers an empty map
+  rather than null or an error, which is the normal state early at an event and
+  the permanent state at an offseason one.
+
 ## 0.5.1
 
 - No API change. Adds coverage for the empty-key guard and for award and

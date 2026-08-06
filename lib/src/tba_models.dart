@@ -676,3 +676,48 @@ class TbaAwardRecipient {
   final String? teamKey;
   final String? awardee;
 }
+
+/// TBA's own predicted outcome for one match (`/event/{key}/predictions`).
+///
+/// The payload also carries per-game component means and variances, which are
+/// renamed every season, so only the season-independent parts are modelled:
+/// the two predicted scores, the alliance TBA expects to win, and how confident
+/// it is. [probability] is TBA's confidence in [winningAlliance], not the red
+/// alliance's chance, so it is always at least 0.5 on a well-formed payload.
+class TbaMatchPrediction {
+  const TbaMatchPrediction({
+    required this.matchKey,
+    required this.redScore,
+    required this.blueScore,
+    required this.winningAlliance,
+    required this.probability,
+  });
+
+  factory TbaMatchPrediction.fromJson(String matchKey, Map<String, dynamic> j) {
+    double score(Object? alliance) {
+      if (alliance is! Map) return 0;
+      final value = alliance['score'];
+      return value is num ? value.toDouble() : 0;
+    }
+
+    final winner = j['winning_alliance'];
+    final prob = j['prob'];
+    return TbaMatchPrediction(
+      matchKey: matchKey,
+      redScore: score(j['red']),
+      blueScore: score(j['blue']),
+      winningAlliance: winner is String ? winner : '',
+      probability: prob is num ? prob.toDouble() : 0,
+    );
+  }
+
+  final String matchKey;
+  final double redScore;
+  final double blueScore;
+
+  /// `red`, `blue`, or empty when the payload does not say.
+  final String winningAlliance;
+
+  /// TBA's confidence in [winningAlliance], 0 to 1.
+  final double probability;
+}

@@ -1330,4 +1330,92 @@ void main() {
       expect(await client.getEventAwards('2026txhou'), isNull);
     },
   );
+
+  group('getEventPredictions', () {
+    TbaClient clientReturning(Object body) => TbaClient(
+          config: InMemoryTbaConfig('test-key'),
+          httpClient: MockClient((request) async {
+            expect(
+              request.url.toString(),
+              'https://www.thebluealliance.com/api/v3/event/2026txhou/predictions',
+            );
+            return http.Response(
+              jsonEncode(body),
+              200,
+              headers: <String, String>{'content-type': 'application/json'},
+            );
+          }),
+        );
+
+    test('merges the qual and playoff maps, keyed by match', () async {
+      final client = clientReturning(<String, dynamic>{
+        'match_predictions': <String, dynamic>{
+          'qual': <String, dynamic>{
+            '2026txhou_qm1': <String, dynamic>{
+              'red': <String, dynamic>{'score': 109.27, 'score_var': 700.1},
+              'blue': <String, dynamic>{'score': 111.07},
+              'winning_alliance': 'blue',
+              'prob': 0.515,
+            },
+          },
+          'playoff': <String, dynamic>{
+            '2026txhou_f1m1': <String, dynamic>{
+              'red': <String, dynamic>{'score': 140.0},
+              'blue': <String, dynamic>{'score': 136.8},
+              'winning_alliance': 'red',
+              'prob': 0.62,
+            },
+          },
+        },
+      });
+
+      final predictions = await client.getEventPredictions('2026txhou');
+
+      expect(predictions, hasLength(2));
+      final qual = predictions['2026txhou_qm1']!;
+      expect(qual.redScore, closeTo(109.27, 0.001));
+      expect(qual.blueScore, closeTo(111.07, 0.001));
+      expect(qual.winningAlliance, 'blue');
+      expect(qual.probability, closeTo(0.515, 0.001));
+      expect(predictions['2026txhou_f1m1']!.winningAlliance, 'red');
+    });
+
+    test('an event with nothing to predict is empty, not an error', () async {
+      // What TBA answers early at an event and permanently at an offseason one.
+      final client = clientReturning(<String, dynamic>{});
+
+      expect(await client.getEventPredictions('2026txhou'), isEmpty);
+    });
+
+    test('a malformed entry is skipped rather than throwing', () async {
+      final client = clientReturning(<String, dynamic>{
+        'match_predictions': <String, dynamic>{
+          'qual': <String, dynamic>{
+            '2026txhou_qm1': 'not a map',
+            '2026txhou_qm2': <String, dynamic>{
+              'red': 'not a map',
+              'blue': <String, dynamic>{'score': 'not a number'},
+            },
+          },
+        },
+      });
+
+      final predictions = await client.getEventPredictions('2026txhou');
+
+      expect(predictions.keys, <String>['2026txhou_qm2']);
+      // A score that will not parse reads as zero, not as a crash.
+      expect(predictions['2026txhou_qm2']!.redScore, 0);
+      expect(predictions['2026txhou_qm2']!.blueScore, 0);
+      expect(predictions['2026txhou_qm2']!.winningAlliance, isEmpty);
+    });
+
+    test('a 404 is an empty map', () async {
+      final client = TbaClient(
+        config: InMemoryTbaConfig('test-key'),
+        httpClient: MockClient((_) async => http.Response('', 404)),
+      );
+
+      expect(await client.getEventPredictions('2026txhou'), isEmpty);
+    });
+  });
 }
