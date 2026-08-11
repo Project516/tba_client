@@ -10,7 +10,7 @@ final team = await client.getTeam(1234);
 final matches = await client.getEventMatches('2026txhou');
 ```
 
-Covers teams, team avatars (media), events, event team lists, match schedules, plain OPR/DPR/CCWM, component OPR (COPRS) breakdowns, qualification rankings, playoff alliances, and event awards, decoded into plain Dart models. The `TbaConfig` seam decides where the `X-TBA-Auth-Key` comes from: `CompileTimeTbaConfig` reads a `--dart-define=TBA_API_KEY`, `InMemoryTbaConfig` holds one directly, and your app can implement the interface to resolve keys from anywhere (the source app chains a Firestore-stored team key). A missing key throws `TbaApiKeyMissingException` before any request goes out.
+Covers teams, team avatars (media), events, event team lists, match schedules, match predictions, plain OPR/DPR/CCWM, component OPR (COPRS) breakdowns, qualification rankings, playoff alliances, and event awards, decoded into plain Dart models. The `TbaConfig` seam decides where the `X-TBA-Auth-Key` comes from: `CompileTimeTbaConfig` reads a `--dart-define=TBA_API_KEY`, `InMemoryTbaConfig` holds one directly, and your app can implement the interface to resolve keys from anywhere (the source app chains a Firestore-stored team key). A missing key throws `TbaApiKeyMissingException` before any request goes out.
 
 ## API key resolution
 
@@ -26,7 +26,7 @@ final client = TbaClient(config: CompileTimeTbaConfig());
 
 ## API reference
 
-`TbaClient` targets `/api/v3` on `www.thebluealliance.com`. List endpoints return an empty list on 404; single-object endpoints return `null` on 404. Some event sub-resources (`getEventRankings`, `getEventAlliances`, `getEventAwards`, `getEventCoprs`, `getEventOprs`) also return `null` for a normal pre-event state (no rankings yet, no alliance selection, no awards ceremony), so a null is not an error. Anything else outside 2xx throws `TbaApiException`. `getStatus` treats 404 as a hard error so you can tell a misconfigured base URL / bad key apart from a normal "not found".
+`TbaClient` targets `/api/v3` on `www.thebluealliance.com`. List endpoints return an empty list on 404; single-object endpoints return `null` on 404. `getEventPredictions` is the exception: it returns an empty map (not `null`) on 404 and when there is nothing to predict, because TBA answers `{}` early at an event and permanently at an offseason one, which is a normal state rather than an error. Some event sub-resources (`getEventRankings`, `getEventAlliances`, `getEventAwards`, `getEventCoprs`, `getEventOprs`) also return `null` for a normal pre-event state (no rankings yet, no alliance selection, no awards ceremony), so a null is not an error. Anything else outside 2xx throws `TbaApiException`. `getStatus` treats 404 as a hard error so you can tell a misconfigured base URL / bad key apart from a normal "not found".
 
 | Method | Endpoint | Returns |
 | --- | --- | --- |
@@ -38,6 +38,7 @@ final client = TbaClient(config: CompileTimeTbaConfig());
 | `getEventsForYear(int year)` | `GET /events/{year}` | `List<TbaEvent>` |
 | `getEventMatches(String eventKey)` | `GET /event/{key}/matches/simple` | `List<TbaScheduleMatch>` |
 | `getEventMatchesDetailed(String eventKey)` | `GET /event/{key}/matches` | `List<TbaScheduleMatch>` |
+| `getEventPredictions(String eventKey)` | `GET /event/{key}/predictions` | `Map<String, TbaMatchPrediction>` (keyed by match key) |
 | `getEventOprs(String eventKey)` | `GET /event/{key}/oprs` | `TbaEventOprs?` |
 | `getEventCoprs(String eventKey)` | `GET /event/{key}/coprs` | `TbaEventCoprs?` |
 | `getEventRankings(String eventKey)` | `GET /event/{key}/rankings` | `TbaEventRankings?` |
@@ -75,6 +76,14 @@ final oprs = await client.getEventOprs('2026cmptx');
 if (oprs != null) {
   print('OPR for frc254: ${oprs.oprs['frc254'] ?? 'N/A'}');
 }
+
+// Predicted scores per match. Empty early at an event and at offseason ones.
+final predictions = await client.getEventPredictions('2026cmptx');
+for (final entry in predictions.entries) {
+  final p = entry.value;
+  print('${entry.key}: ${p.redScore} vs ${p.blueScore} (${p.winningAlliance}, '
+      'p=${p.probability})');
+}
 ```
 
 ### Models
@@ -88,6 +97,7 @@ if (oprs != null) {
 - `TbaEventAlliances` - playoff alliances in pick order. `eventKey` plus an `alliances` list of `TbaAlliance`. The order is preserved exactly as returned and never sorted: `picks` is team keys in pick order (captain first), `captain` is the first pick (or null when empty), `status` is how far the alliance got (e.g. `f`, `sf`, or empty), and `record` is the playoff record as `wins-losses-ties`. `isEmpty` reports whether any alliances are present.
 - `TbaEventAwards` - awards presented at an event. `eventKey` plus an `awards` list of `TbaAward`. Each `TbaAward` carries `name`, `awardType`, and `recipients` (`TbaAwardRecipient`), where a recipient may be a team, a person, or both, so team awards can be told apart from individual ones. `forTeam(teamKey)` returns every award that team received. `isEmpty` reports whether any awards are present.
 - `TbaMatch` - `key` and a `List<TbaMatchVideo>`. `youtubeVideo` returns the first YouTube entry; `TbaMatchVideo.youtubeUrl` builds the watch URL.
+- `TbaMatchPrediction` - TBA's predicted outcome for one match, from `/event/{key}/predictions`. Carries `matchKey`, `redScore` and `blueScore` (predicted scores), `winningAlliance` (`red`, `blue`, or empty when the payload does not say), and `probability` (0 to 1, TBA's confidence in the winning alliance, not the red alliance's chance). Available per match via `getEventPredictions`, which keys predictions by match key and returns an empty map when TBA has nothing to predict.
 - `TbaApiStatus` - `currentSeason` and `maxSeason` from the `/status` endpoint.
 
 ### Exceptions
