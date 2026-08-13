@@ -43,7 +43,7 @@ final client = TbaClient(config: CompileTimeTbaConfig());
 | `getEventRankings(String eventKey)` | `GET /event/{key}/rankings` | `TbaEventRankings?` |
 | `getEventAlliances(String eventKey)` | `GET /event/{key}/alliances` | `TbaEventAlliances?` |
 | `getEventAwards(String eventKey)` | `GET /event/{key}/awards` | `TbaEventAwards?` |
-| `getEventPredictions(String eventKey)` | `GET /event/{key}/predictions` | `Map<String, TbaMatchPrediction>` (empty for no data) |
+| `getEventPredictions(String eventKey)` | `GET /event/{key}/predictions` | `Map<String, TbaMatchPrediction>` keyed by match key (empty for no data) |
 | `getMatch(String matchKey)` | `GET /match/{key}` | `TbaMatch?` |
 
 Examples:
