@@ -530,6 +530,13 @@ class TbaTeamRanking {
   final List<num> sortOrders;
 
   String get record => '$wins-$losses-$ties';
+
+  /// The numeric team number parsed from [teamKey], or 0 when the key does
+  /// not follow the `frc{n}` convention. Mirrors [TbaTeam.teamNumber].
+  int get teamNumber {
+    final match = RegExp(r'^frc(\d+)$').firstMatch(teamKey);
+    return match == null ? 0 : int.parse(match.group(1)!);
+  }
 }
 
 /// `GET /event/{eventKey}/alliances`: playoff alliances as picked (#11).

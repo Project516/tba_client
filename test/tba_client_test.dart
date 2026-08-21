@@ -1201,6 +1201,36 @@ void main() {
     });
   });
 
+  test('TbaTeamRanking.teamNumber parses the numeric part of teamKey', () {
+    final ranking = TbaTeamRanking.fromJson(<String, dynamic>{
+      'rank': 1,
+      'team_key': 'frc254',
+      'record': <String, dynamic>{'wins': 8, 'losses': 2, 'ties': 0},
+      'matches_played': 10,
+      'dq': 0,
+      'sort_orders': <num>[2.4],
+    });
+    expect(ranking.teamNumber, 254);
+  });
+
+  test('TbaTeamRanking.teamNumber returns 0 for a malformed key', () {
+    final ranking = TbaTeamRanking.fromJson(<String, dynamic>{
+      'rank': 2,
+      'team_key': 'not-a-team',
+      'sort_orders': <num>[],
+    });
+    expect(ranking.teamNumber, 0);
+  });
+
+  test('TbaTeamRanking.teamNumber rejects an embedded frc token', () {
+    final ranking = TbaTeamRanking.fromJson(<String, dynamic>{
+      'rank': 3,
+      'team_key': '1frc254',
+      'sort_orders': <num>[],
+    });
+    expect(ranking.teamNumber, 0);
+  });
+
   test('TbaClient.getEventRankings returns null before rankings exist',
       () async {
     // TBA answers a literal null here pre-event, which is not an error.
