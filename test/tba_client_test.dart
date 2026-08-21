@@ -1222,6 +1222,15 @@ void main() {
     expect(ranking.teamNumber, 0);
   });
 
+  test('TbaTeamRanking.teamNumber rejects an embedded frc token', () {
+    final ranking = TbaTeamRanking.fromJson(<String, dynamic>{
+      'rank': 3,
+      'team_key': '1frc254',
+      'sort_orders': <num>[],
+    });
+    expect(ranking.teamNumber, 0);
+  });
+
   test('TbaClient.getEventRankings returns null before rankings exist',
       () async {
     // TBA answers a literal null here pre-event, which is not an error.
