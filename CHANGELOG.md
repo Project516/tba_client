@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0
+
+- `TbaTeamRanking.teamNumber` parses the numeric team number out of `teamKey`,
+  matching the getter `TbaTeam` already had. A key that is not in `frcNNNN`
+  form reads as 0 rather than throwing.
+- README: `getEventPredictions` is documented, and the empty-key example points
+  at `InMemoryTbaConfig('')` instead of a `--dart-define` flag, which is
+  `CompileTimeTbaConfig`'s path.
+
 ## 0.6.0
 
 - `getEventPredictions` reads `/event/{key}/predictions`, TBA's own predicted
