@@ -17,7 +17,7 @@ Covers teams, team avatars (media), events, event team lists, match schedules, p
 `TbaClient` needs a TBA auth key on every request (the `X-TBA-Auth-Key` header, preferred over the query-string form so CDN caching stays intact). Three out-of-the-box options, all injectable through `TbaConfig`:
 
 - `CompileTimeTbaConfig` - reads `String.fromEnvironment('TBA_API_KEY')`, set via `--dart-define=TBA_API_KEY=...` or `--dart-define-from-file=tba.env`. The default for the source app.
-- `InMemoryTbaConfig` - holds a key in memory; handy for tests and quick scripts. Pass `--define=TBA_API_KEY=` (or omit) to represent an empty key.
+- `InMemoryTbaConfig` - holds a key in memory; handy for tests and quick scripts. Pass `--dart-define=TBA_API_KEY=` (or omit) to represent an empty key.
 - Custom - implement `TbaConfig` yourself to resolve keys from a remote store, user settings, or a secrets manager.
 
 ```dart
