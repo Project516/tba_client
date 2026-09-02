@@ -240,6 +240,18 @@ void main() {
       expect(rankings.sortOrdersFor(rankings.rankings.first), hasLength(5));
     });
 
+    test('TbaEventRankings decodes extra_stats alongside sort_orders',
+        () async {
+      final rankings =
+          await _clientServing('event_rankings').getEventRankings('2025cabe');
+
+      expect(rankings, isNotNull);
+      final first = rankings!.rankings.first;
+      expect(rankings.extraStatsNames, ['Total Ranking Points']);
+      expect(first.extraStats, [53]);
+      expect(rankings.extraStatsFor(first)['Total Ranking Points'], 53);
+    });
+
     test('TbaEventAlliances keeps pick order', () async {
       final alliances =
           await _clientServing('event_alliances').getEventAlliances('2025cabe');
