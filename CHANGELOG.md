@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.9.0
 
 - `getTeamAwards(int teamNumber, {int? year})` reads
   `/team/frc{n}/awards`, or `/team/frc{n}/awards/{year}` when a season is
