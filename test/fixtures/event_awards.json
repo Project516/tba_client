@@ -1,0 +1,46 @@
+[
+ {
+  "award_type": 0,
+  "event_key": "2025cabe",
+  "name": "Regional FIRST Impact Award",
+  "recipient_list": [
+   {
+    "awardee": null,
+    "team_key": "frc5985"
+   }
+  ],
+  "year": 2025
+ },
+ {
+  "award_type": 1,
+  "event_key": "2025cabe",
+  "name": "Regional Winners",
+  "recipient_list": [
+   {
+    "awardee": null,
+    "team_key": "frc254"
+   },
+   {
+    "awardee": null,
+    "team_key": "frc4270"
+   },
+   {
+    "awardee": null,
+    "team_key": "frc2204"
+   }
+  ],
+  "year": 2025
+ },
+ {
+  "award_type": 10,
+  "event_key": "2025cabe",
+  "name": "Rookie All Star Award",
+  "recipient_list": [
+   {
+    "awardee": null,
+    "team_key": "frc10246"
+   }
+  ],
+  "year": 2025
+ }
+]

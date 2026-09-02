@@ -1,0 +1,78 @@
+{
+ "extra_stats_info": [
+  {
+   "name": "Total Ranking Points",
+   "precision": 0
+  }
+ ],
+ "rankings": [
+  {
+   "dq": 0,
+   "extra_stats": [
+    53
+   ],
+   "matches_played": 9,
+   "qual_average": null,
+   "rank": 1,
+   "record": {
+    "losses": 0,
+    "ties": 0,
+    "wins": 9
+   },
+   "sort_orders": [
+    5.89,
+    0.33,
+    162.78,
+    35.89,
+    17.11,
+    0.0
+   ],
+   "team_key": "frc254"
+  },
+  {
+   "dq": 0,
+   "extra_stats": [
+    47
+   ],
+   "matches_played": 9,
+   "qual_average": null,
+   "rank": 2,
+   "record": {
+    "losses": 0,
+    "ties": 0,
+    "wins": 9
+   },
+   "sort_orders": [
+    5.22,
+    0.44,
+    142.0,
+    31.0,
+    13.56,
+    0.0
+   ],
+   "team_key": "frc8033"
+  }
+ ],
+ "sort_order_info": [
+  {
+   "name": "Ranking Score",
+   "precision": 2
+  },
+  {
+   "name": "Avg Coop",
+   "precision": 2
+  },
+  {
+   "name": "Avg Match",
+   "precision": 2
+  },
+  {
+   "name": "Avg Auto",
+   "precision": 2
+  },
+  {
+   "name": "Avg Barge",
+   "precision": 2
+  }
+ ]
+}

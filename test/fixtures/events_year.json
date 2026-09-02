@@ -1,0 +1,78 @@
+[
+ {
+  "address": "700 Monroe Street SW",
+  "city": "Huntsville",
+  "country": "USA",
+  "district": null,
+  "division_keys": [],
+  "end_date": "2025-03-15",
+  "event_code": "alhu",
+  "event_type": 0,
+  "event_type_string": "Regional",
+  "first_event_code": "alhu",
+  "first_event_id": null,
+  "gmaps_place_id": null,
+  "gmaps_url": null,
+  "key": "2025alhu",
+  "lat": null,
+  "lng": null,
+  "location_name": "Von Braun Center",
+  "name": "Rocket City Regional",
+  "parent_event_key": null,
+  "playoff_type": 10,
+  "playoff_type_string": "Double Elimination Bracket (8 Alliances)",
+  "postal_code": "35801",
+  "remap_teams": null,
+  "short_name": "Rocket City",
+  "start_date": "2025-03-12",
+  "state_prov": "AL",
+  "timezone": "America/Chicago",
+  "webcasts": [
+   {
+    "channel": "firstinspires5",
+    "type": "twitch"
+   }
+  ],
+  "website": "http://firstinalabama.org/events/frc-events/",
+  "week": 2,
+  "year": 2025
+ },
+ {
+  "address": "1001 Avenida De Las Americas",
+  "city": "Houston",
+  "country": "USA",
+  "district": null,
+  "division_keys": [],
+  "end_date": "2025-04-19",
+  "event_code": "arc",
+  "event_type": 3,
+  "event_type_string": "Championship Division",
+  "first_event_code": "archimedes",
+  "first_event_id": null,
+  "gmaps_place_id": null,
+  "gmaps_url": null,
+  "key": "2025arc",
+  "lat": null,
+  "lng": null,
+  "location_name": "George R. Brown Convention Center",
+  "name": "Archimedes Division",
+  "parent_event_key": "2025cmptx",
+  "playoff_type": 10,
+  "playoff_type_string": "Double Elimination Bracket (8 Alliances)",
+  "postal_code": "77010",
+  "remap_teams": null,
+  "short_name": "Archimedes",
+  "start_date": "2025-04-16",
+  "state_prov": "TX",
+  "timezone": "America/Chicago",
+  "webcasts": [
+   {
+    "channel": "firstinspires_archimedes",
+    "type": "twitch"
+   }
+  ],
+  "website": "https://www.firstchampionship.org",
+  "week": null,
+  "year": 2025
+ }
+]

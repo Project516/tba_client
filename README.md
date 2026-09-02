@@ -123,3 +123,10 @@ Tests use a mock `http.Client` (from `package:http/testing`) so they run without
 ## License
 
 AGPL-3.0
+
+## Tests
+
+Model tests assert against captured live response bodies in `test/fixtures/`,
+not only hand-written maps, so a change to TBA's response shape fails a test
+rather than reaching a consumer. Refresh a fixture with the `curl` in the
+comment above `_fixture` in `test/live_fixtures_test.dart`.

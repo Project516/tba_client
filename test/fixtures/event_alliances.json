@@ -1,0 +1,204 @@
+[
+  {
+    "declines": [],
+    "name": "Alliance 1",
+    "picks": [
+      "frc254",
+      "frc4270",
+      "frc2204"
+    ],
+    "status": {
+      "current_level_record": {
+        "losses": 0,
+        "ties": 0,
+        "wins": 2
+      },
+      "double_elim_round": "Finals",
+      "level": "f",
+      "playoff_type": 10,
+      "record": {
+        "losses": 0,
+        "ties": 0,
+        "wins": 5
+      },
+      "status": "won"
+    }
+  },
+  {
+    "declines": [],
+    "name": "Alliance 2",
+    "picks": [
+      "frc8033",
+      "frc972",
+      "frc8793",
+      "frc5924"
+    ],
+    "status": {
+      "current_level_record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 0
+      },
+      "double_elim_round": "Finals",
+      "level": "f",
+      "playoff_type": 10,
+      "record": {
+        "losses": 3,
+        "ties": 0,
+        "wins": 4
+      },
+      "status": "eliminated"
+    }
+  },
+  {
+    "declines": [],
+    "name": "Alliance 3",
+    "picks": [
+      "frc5507",
+      "frc5419",
+      "frc10202"
+    ],
+    "status": {
+      "current_level_record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 2
+      },
+      "double_elim_round": "Round 5",
+      "level": "sf",
+      "playoff_type": 10,
+      "record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 2
+      },
+      "status": "eliminated"
+    }
+  },
+  {
+    "declines": [],
+    "name": "Alliance 4",
+    "picks": [
+      "frc6238",
+      "frc766",
+      "frc5171"
+    ],
+    "status": {
+      "current_level_record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 2
+      },
+      "double_elim_round": "Round 4",
+      "level": "sf",
+      "playoff_type": 10,
+      "record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 2
+      },
+      "status": "eliminated"
+    }
+  },
+  {
+    "declines": [],
+    "name": "Alliance 5",
+    "picks": [
+      "frc199",
+      "frc1351",
+      "frc649",
+      "frc668"
+    ],
+    "status": {
+      "current_level_record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 0
+      },
+      "double_elim_round": "Round 2",
+      "level": "sf",
+      "playoff_type": 10,
+      "record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 0
+      },
+      "status": "eliminated"
+    }
+  },
+  {
+    "declines": [],
+    "name": "Alliance 6",
+    "picks": [
+      "frc4669",
+      "frc9470",
+      "frc3482"
+    ],
+    "status": {
+      "current_level_record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 1
+      },
+      "double_elim_round": "Round 3",
+      "level": "sf",
+      "playoff_type": 10,
+      "record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 1
+      },
+      "status": "eliminated"
+    }
+  },
+  {
+    "declines": [],
+    "name": "Alliance 7",
+    "picks": [
+      "frc6059",
+      "frc8852",
+      "frc9038"
+    ],
+    "status": {
+      "current_level_record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 0
+      },
+      "double_elim_round": "Round 2",
+      "level": "sf",
+      "playoff_type": 10,
+      "record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 0
+      },
+      "status": "eliminated"
+    }
+  },
+  {
+    "declines": [],
+    "name": "Alliance 8",
+    "picks": [
+      "frc1868",
+      "frc6418",
+      "frc841"
+    ],
+    "status": {
+      "current_level_record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 1
+      },
+      "double_elim_round": "Round 3",
+      "level": "sf",
+      "playoff_type": 10,
+      "record": {
+        "losses": 2,
+        "ties": 0,
+        "wins": 1
+      },
+      "status": "eliminated"
+    }
+  }
+]
