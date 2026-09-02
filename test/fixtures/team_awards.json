@@ -1,0 +1,102 @@
+[
+ {
+  "award_type": 2,
+  "event_key": "2025new",
+  "name": "Championship Division Finalist",
+  "recipient_list": [
+   {
+    "awardee": null,
+    "team_key": "frc422"
+   },
+   {
+    "awardee": null,
+    "team_key": "frc868"
+   },
+   {
+    "awardee": null,
+    "team_key": "frc3847"
+   },
+   {
+    "awardee": null,
+    "team_key": "frc5535"
+   }
+  ],
+  "year": 2025
+ },
+ {
+  "award_type": 1,
+  "event_key": "2025txbel",
+  "name": "District Event Winner",
+  "recipient_list": [
+   {
+    "awardee": null,
+    "team_key": "frc6369"
+   },
+   {
+    "awardee": null,
+    "team_key": "frc3847"
+   },
+   {
+    "awardee": null,
+    "team_key": "frc10518"
+   }
+  ],
+  "year": 2025
+ },
+ {
+  "award_type": 16,
+  "event_key": "2025txbel",
+  "name": "Industrial Design Award sponsored by General Motors",
+  "recipient_list": [
+   {
+    "awardee": null,
+    "team_key": "frc3847"
+   }
+  ],
+  "year": 2025
+ },
+ {
+  "award_type": 16,
+  "event_key": "2025txcmp1",
+  "name": "Industrial Design Award sponsored by General Motors",
+  "recipient_list": [
+   {
+    "awardee": null,
+    "team_key": "frc3847"
+   }
+  ],
+  "year": 2025
+ },
+ {
+  "award_type": 1,
+  "event_key": "2025txhou",
+  "name": "District Event Winner",
+  "recipient_list": [
+   {
+    "awardee": null,
+    "team_key": "frc118"
+   },
+   {
+    "awardee": null,
+    "team_key": "frc3847"
+   },
+   {
+    "awardee": null,
+    "team_key": "frc7691"
+   }
+  ],
+  "year": 2025
+ },
+ {
+  "award_type": 71,
+  "event_key": "2025txhou",
+  "name": "Autonomous Award",
+  "recipient_list": [
+   {
+    "awardee": null,
+    "team_key": "frc3847"
+   }
+  ],
+  "year": 2025
+ }
+]

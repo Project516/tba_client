@@ -662,11 +662,18 @@ class TbaEventAwards {
 }
 
 /// One award and who received it.
+///
+/// [eventKey] and [year] say where and when it was won. They matter most for
+/// `getTeamAwards`, where one list spans several events and a season is not
+/// implied by the call, but TBA sends them on the event-scoped payload too so
+/// they are read the same way in both.
 class TbaAward {
   const TbaAward({
     required this.name,
     required this.awardType,
     required this.recipients,
+    this.eventKey = '',
+    this.year = 0,
   });
 
   factory TbaAward.fromJson(Map<String, dynamic> json) {
@@ -674,6 +681,8 @@ class TbaAward {
     return TbaAward(
       name: (json['name'] as String?) ?? '',
       awardType: (json['award_type'] as num?)?.toInt() ?? 0,
+      eventKey: (json['event_key'] as String?) ?? '',
+      year: (json['year'] as num?)?.toInt() ?? 0,
       recipients: List<TbaAwardRecipient>.unmodifiable(
         rawRecipients is List
             ? rawRecipients.whereType<Map>().map(
@@ -687,7 +696,19 @@ class TbaAward {
 
   final String name;
   final int awardType;
+
+  /// The event it was won at, empty when the payload omits it.
+  final String eventKey;
+
+  /// The season it was won in, 0 when the payload omits it.
+  final int year;
+
   final List<TbaAwardRecipient> recipients;
+
+  /// Whether this is a win or a finish, as opposed to a judged or individual
+  /// award. TBA's award types 1 and 2 are the winner and finalist slots at
+  /// every level of play.
+  bool get isWinOrFinalist => awardType == 1 || awardType == 2;
 }
 
 /// An award recipient: a team, a person, or both.

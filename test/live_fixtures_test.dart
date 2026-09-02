@@ -280,6 +280,46 @@ void main() {
       expect(impact.recipients.single.teamKey, 'frc5985');
       // A team award has no named awardee.
       expect(impact.recipients.single.awardee, isNull);
+      // The event-scoped payload carries event_key and year too, so the same
+      // fields the team-scoped list depends on are read here as well.
+      expect(impact.eventKey, '2025cabe');
+      expect(impact.year, 2025);
+    });
+
+    test('TbaAward decodes a real /team/{key}/awards body', () async {
+      final awards =
+          await _clientServing('team_awards').getTeamAwards(3847, year: 2025);
+
+      expect(awards, hasLength(6));
+
+      // The reason this endpoint needs event_key and year at all: one call
+      // spans four events, so an award is meaningless without saying where it
+      // was won.
+      expect(
+        awards.map((a) => a.eventKey).toSet(),
+        {'2025new', '2025txbel', '2025txcmp1', '2025txhou'},
+      );
+      expect(awards.every((a) => a.year == 2025), isTrue);
+
+      final divisionFinalist = awards.first;
+      expect(divisionFinalist.name, 'Championship Division Finalist');
+      expect(divisionFinalist.awardType, 2);
+      expect(divisionFinalist.eventKey, '2025new');
+      expect(divisionFinalist.isWinOrFinalist, isTrue);
+      // A finalist alliance, so the team is one recipient of four.
+      expect(divisionFinalist.recipients, hasLength(4));
+      expect(
+        divisionFinalist.recipients.map((r) => r.teamKey),
+        contains('frc3847'),
+      );
+      expect(
+          divisionFinalist.recipients.every((r) => r.awardee == null), isTrue);
+
+      final judged = awards.firstWhere((a) => a.awardType == 16);
+      expect(
+          judged.name, 'Industrial Design Award sponsored by General Motors');
+      expect(judged.isWinOrFinalist, isFalse);
+      expect(judged.recipients.single.teamKey, 'frc3847');
     });
 
     test('predictions merge the qual and playoff sections', () async {
