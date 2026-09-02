@@ -427,6 +427,7 @@ class TbaEventRankings {
     required this.eventKey,
     required this.rankings,
     required this.sortOrderNames,
+    this.extraStatsNames = const <String>[],
   });
 
   factory TbaEventRankings.fromJson(
@@ -437,16 +438,18 @@ class TbaEventRankings {
         for (final row in rawRankings.whereType<Map>())
           TbaTeamRanking.fromJson(Map<String, dynamic>.from(row)),
     ];
-    final rawInfo = json['sort_order_info'];
-    final names = <String>[
-      if (rawInfo is List)
-        for (final info in rawInfo.whereType<Map>())
-          (info['name'] ?? '').toString(),
-    ];
+    List<String> namesFrom(Object? rawInfo) => <String>[
+          if (rawInfo is List)
+            for (final info in rawInfo.whereType<Map>())
+              (info['name'] ?? '').toString(),
+        ];
     return TbaEventRankings(
       eventKey: eventKey,
       rankings: List<TbaTeamRanking>.unmodifiable(rankings),
-      sortOrderNames: List<String>.unmodifiable(names),
+      sortOrderNames:
+          List<String>.unmodifiable(namesFrom(json['sort_order_info'])),
+      extraStatsNames:
+          List<String>.unmodifiable(namesFrom(json['extra_stats_info'])),
     );
   }
 
@@ -460,19 +463,31 @@ class TbaEventRankings {
   /// payload rather than hardcoded, the same way COPRs stat names are.
   final List<String> sortOrderNames;
 
+  /// What each entry in [TbaTeamRanking.extraStats] means, positionally. Same
+  /// game-specific, payload-sourced treatment as [sortOrderNames].
+  final List<String> extraStatsNames;
+
   bool get isEmpty => rankings.isEmpty;
+
+  Map<String, num> _pair(List<String> names, List<num> values) {
+    final result = <String, num>{};
+    for (var i = 0; i < names.length; i++) {
+      if (i >= values.length) break;
+      result[names[i]] = values[i];
+    }
+    return result;
+  }
 
   /// [TbaTeamRanking.sortOrders] paired with [sortOrderNames], which is what a
   /// table wants. Extra values with no matching name are dropped, since a column
   /// nobody can label is not worth showing.
-  Map<String, num> sortOrdersFor(TbaTeamRanking ranking) {
-    final result = <String, num>{};
-    for (var i = 0; i < sortOrderNames.length; i++) {
-      if (i >= ranking.sortOrders.length) break;
-      result[sortOrderNames[i]] = ranking.sortOrders[i];
-    }
-    return result;
-  }
+  Map<String, num> sortOrdersFor(TbaTeamRanking ranking) =>
+      _pair(sortOrderNames, ranking.sortOrders);
+
+  /// [TbaTeamRanking.extraStats] paired with [extraStatsNames], the same
+  /// positional treatment [sortOrdersFor] gives [sortOrderNames].
+  Map<String, num> extraStatsFor(TbaTeamRanking ranking) =>
+      _pair(extraStatsNames, ranking.extraStats);
 }
 
 /// One team's row in the ranking table.
@@ -487,6 +502,7 @@ class TbaTeamRanking {
     required this.dq,
     required this.qualAverage,
     required this.sortOrders,
+    this.extraStats = const <num>[],
   });
 
   factory TbaTeamRanking.fromJson(Map<String, dynamic> json) {
@@ -498,6 +514,7 @@ class TbaTeamRanking {
     }
 
     final rawSort = json['sort_orders'];
+    final rawExtra = json['extra_stats'];
     return TbaTeamRanking(
       rank: (json['rank'] as num?)?.toInt() ?? 0,
       teamKey: (json['team_key'] as String?) ?? '',
@@ -509,6 +526,9 @@ class TbaTeamRanking {
       qualAverage: (json['qual_average'] as num?)?.toDouble(),
       sortOrders: List<num>.unmodifiable(
         rawSort is List ? rawSort.whereType<num>() : const <num>[],
+      ),
+      extraStats: List<num>.unmodifiable(
+        rawExtra is List ? rawExtra.whereType<num>() : const <num>[],
       ),
     );
   }
@@ -528,6 +548,11 @@ class TbaTeamRanking {
   /// [TbaEventRankings.sortOrderNames] via
   /// [TbaEventRankings.sortOrdersFor] rather than indexing blind.
   final List<num> sortOrders;
+
+  /// Extra ranking stats beyond the sort orders, positional. Pair them with
+  /// [TbaEventRankings.extraStatsNames] via
+  /// [TbaEventRankings.extraStatsFor] rather than indexing blind.
+  final List<num> extraStats;
 
   String get record => '$wins-$losses-$ties';
 
