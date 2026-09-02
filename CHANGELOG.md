@@ -2,11 +2,12 @@
 
 ## Unreleased
 
-- Model tests now assert against captured live response bodies in
-  `test/fixtures/`, covering every endpoint the client exposes. No behavior
-  change and no version bump: the audit that prompted this found the models
-  already correct against the live API, so this locks that in rather than
-  fixing anything.
+- Tests now assert against captured live response bodies in `test/fixtures/`,
+  one for every endpoint the client exposes, including `fetchTeamAvatar`,
+  whose bytes come from `details.base64Image` two levels inside a mixed media
+  list. No behavior change and no version bump: the audit that prompted this
+  found the models already correct against the live API, so this locks that in
+  rather than fixing anything.
 
   Prompted by `statbotics_client` v0.4.0, where models that had never been
   run against a live body shipped four releases broken while their

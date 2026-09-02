@@ -141,6 +141,40 @@ void main() {
       expect(match.videos.single.key, 'rC6xTPwthSg');
     });
 
+    test('fetchTeamAvatar finds the avatar among other media', () async {
+      // The media list mixes types, and the bytes live two levels down at
+      // details.base64Image. The fixture deliberately puts a non-avatar
+      // entry first, so a scan that stopped at the first item would fail.
+      final media = _json('team_media') as List;
+      expect(media.first['type'], isNot('avatar'));
+      expect(media.last['type'], 'avatar');
+      expect((media.last['details'] as Map).keys, ['base64Image']);
+
+      final bytes =
+          await _clientServing('team_media').fetchTeamAvatar(254, 2025);
+
+      expect(bytes, isNotNull);
+      expect(bytes!.length, 1443);
+      // A 40x40 PNG, so it starts with the PNG magic number.
+      expect(bytes.take(4), <int>[0x89, 0x50, 0x4E, 0x47]);
+    });
+
+    test('fetchTeamAvatar returns null when no entry is an avatar', () async {
+      // Same real media list with the avatar removed, which is the common
+      // case: most teams have no avatar for a given year.
+      final withoutAvatar = (_json('team_media') as List)
+          .where((m) => (m as Map)['type'] != 'avatar')
+          .toList();
+      final client = TbaClient(
+        config: InMemoryTbaConfig('test-key'),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(withoutAvatar), 200),
+        ),
+      );
+
+      expect(await client.fetchTeamAvatar(254, 2025), isNull);
+    });
+
     test('TbaEventOprs decodes a real /oprs body', () async {
       final oprs = await _clientServing('event_oprs').getEventOprs('2025cabe');
 
