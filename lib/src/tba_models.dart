@@ -427,7 +427,7 @@ class TbaEventRankings {
     required this.eventKey,
     required this.rankings,
     required this.sortOrderNames,
-    required this.extraStatsNames,
+    this.extraStatsNames = const <String>[],
   });
 
   factory TbaEventRankings.fromJson(
@@ -502,7 +502,7 @@ class TbaTeamRanking {
     required this.dq,
     required this.qualAverage,
     required this.sortOrders,
-    required this.extraStats,
+    this.extraStats = const <num>[],
   });
 
   factory TbaTeamRanking.fromJson(Map<String, dynamic> json) {
