@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- `getTeamAwards(int teamNumber, {int? year})` reads
+  `/team/frc{n}/awards`, or `/team/frc{n}/awards/{year}` when a season is
+  given. It answers an empty list both for a team that has won nothing and
+  for a team key TBA does not know, matching the other list endpoints, so a
+  rookie does not read as an error.
+- `TbaAward` carries `eventKey` and `year`. An unscoped team awards list
+  spans a team's whole history, so an award without them cannot be placed,
+  and TBA sends both on the event-scoped payload too. `isWinOrFinalist`
+  covers award types 1 and 2, the winner and finalist slots at every level of
+  play, which is what separates a result from a judged or individual award.
+  Additive: both fields default rather than being required, and no existing
+  field moved.
+
 ## 0.8.0
 
 - `TbaTeamRanking.extraStats` and `TbaEventRankings.extraStatsNames` /

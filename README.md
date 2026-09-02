@@ -26,7 +26,7 @@ final client = TbaClient(config: CompileTimeTbaConfig());
 
 ## API reference
 
-`TbaClient` targets `/api/v3` on `www.thebluealliance.com`. List endpoints return an empty list on 404; single-object endpoints return `null` on 404. Some event sub-resources (`getEventRankings`, `getEventAlliances`, `getEventAwards`, `getEventCoprs`, `getEventOprs`) also return `null` for a normal pre-event state (no rankings yet, no alliance selection, no awards ceremony), so a null is not an error. `getEventPredictions` is the exception to that pattern: it returns an empty map on 404 and on the `{}` TBA answers before it has enough data, which is the normal state early at an event and the permanent state at an offseason one. Anything else outside 2xx throws `TbaApiException`. `getStatus` treats 404 as a hard error so you can tell a misconfigured base URL / bad key apart from a normal "not found".
+`TbaClient` targets `/api/v3` on `www.thebluealliance.com`. List endpoints return an empty list on 404; single-object endpoints return `null` on 404. Some event sub-resources (`getEventRankings`, `getEventAlliances`, `getEventAwards`, `getEventCoprs`, `getEventOprs`) also return `null` for a normal pre-event state (no rankings yet, no alliance selection, no awards ceremony), so a null is not an error. `getTeamAwards` returns an empty list for a team that has won nothing and for a team key TBA does not know, neither of which is an error. `getEventPredictions` is the exception to that pattern: it returns an empty map on 404 and on the `{}` TBA answers before it has enough data, which is the normal state early at an event and the permanent state at an offseason one. Anything else outside 2xx throws `TbaApiException`. `getStatus` treats 404 as a hard error so you can tell a misconfigured base URL / bad key apart from a normal "not found".
 
 | Method | Endpoint | Returns |
 | --- | --- | --- |
@@ -44,6 +44,7 @@ final client = TbaClient(config: CompileTimeTbaConfig());
 | `getEventAlliances(String eventKey)` | `GET /event/{key}/alliances` | `TbaEventAlliances?` |
 | `getEventAwards(String eventKey)` | `GET /event/{key}/awards` | `TbaEventAwards?` |
 | `getEventPredictions(String eventKey)` | `GET /event/{key}/predictions` | `Map<String, TbaMatchPrediction>` keyed by match key (empty for no data) |
+| `getTeamAwards(int teamNumber, {int? year})` | `GET /team/frc{n}/awards[/{year}]` | `List<TbaAward>` |
 | `getMatch(String matchKey)` | `GET /match/{key}` | `TbaMatch?` |
 
 Examples:
@@ -88,6 +89,13 @@ if (predicted != null) {
     '(${(predicted.probability * 100).toStringAsFixed(0)}% confidence)',
   );
 }
+
+// One team's awards. Pass a year to scope the list to a single season;
+// without one you get the team's whole history.
+final awards = await client.getTeamAwards(3847, year: 2025);
+for (final award in awards.where((a) => a.isWinOrFinalist)) {
+  print('${award.year} ${award.eventKey}: ${award.name}');
+}
 ```
 
 ### Models
@@ -99,7 +107,8 @@ if (predicted != null) {
 - `TbaEventOprs` - plain OPR, DPR and CCWM per team for an event, as three team-keyed maps (`oprs`, `dprs`, `ccwms`). Separate from `TbaEventCoprs` because TBA serves them separately and the COPRS payload has no OPR in it. `isEmpty` reports whether every section came back empty.
 - `TbaEventRankings` - the qualification ranking table. `eventKey` plus `rankings` (one `TbaTeamRanking` per team in rank order) and `sortOrderNames`, the column names the payload pairs with each row's `sortOrders`. Those names are game-specific and change every season, so they are read from the payload rather than hardcoded. `sortOrdersFor(ranking)` pairs a row's values with its names for a table; extra values with no matching name are dropped. `isEmpty` reports whether any rows are present. `TbaTeamRanking` carries `teamKey`, `rank`, `teamNumber`, `wins`, `losses`, `ties`, `qualScore`, and `sortOrders` (positional).
 - `TbaEventAlliances` - playoff alliances in pick order. `eventKey` plus an `alliances` list of `TbaAlliance`. The order is preserved exactly as returned and never sorted: `picks` is team keys in pick order (captain first), `captain` is the first pick (or null when empty), `status` is how far the alliance got (e.g. `f`, `sf`, or empty), and `record` is the playoff record as `wins-losses-ties`. `isEmpty` reports whether any alliances are present.
-- `TbaEventAwards` - awards presented at an event. `eventKey` plus an `awards` list of `TbaAward`. Each `TbaAward` carries `name`, `awardType`, and `recipients` (`TbaAwardRecipient`), where a recipient may be a team, a person, or both, so team awards can be told apart from individual ones. `forTeam(teamKey)` returns every award that team received. `isEmpty` reports whether any awards are present.
+- `TbaEventAwards` - awards presented at an event. `eventKey` plus an `awards` list of `TbaAward`. `forTeam(teamKey)` returns every award that team received. `isEmpty` reports whether any awards are present.
+- `TbaAward` - one award: `name`, `awardType`, `eventKey`, `year`, and `recipients` (`TbaAwardRecipient`), where a recipient may be a team, a person, or both, so team awards can be told apart from individual ones. `isWinOrFinalist` is true for TBA award types 1 and 2, the winner and finalist slots at every level of play, which separates a result from a judged or individual award. `eventKey` and `year` matter most for `getTeamAwards`, where one list spans a team's whole history and neither is implied by the call.
 - `TbaMatch` - `key` and a `List<TbaMatchVideo>`. `youtubeVideo` returns the first YouTube entry; `TbaMatchVideo.youtubeUrl` builds the watch URL.
 - `TbaMatchPrediction` - TBA's predicted outcome for one match (`/event/{key}/predictions`). `matchKey`, the two predicted scores (`redScore`, `blueScore`), `winningAlliance` (`red`, `blue`, or empty when the payload does not say), and `probability` (TBA's confidence in `winningAlliance`, 0 to 1, not the red alliance's chance). The per-game component means and variances that the payload also carries are renamed every season, so they are deliberately not modelled.
 - `TbaApiStatus` - `currentSeason` and `maxSeason` from the `/status` endpoint.

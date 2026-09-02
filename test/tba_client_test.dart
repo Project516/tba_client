@@ -1316,6 +1316,77 @@ void main() {
     expect(awards.forTeam('frc9999'), isEmpty);
   });
 
+  test('TbaClient.getTeamAwards scopes the path to a year only when asked',
+      () async {
+    final paths = <String>[];
+    final mockClient = MockClient((request) async {
+      paths.add(request.url.path);
+      return http.Response('[]', 200);
+    });
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+
+    await client.getTeamAwards(3847);
+    await client.getTeamAwards(3847, year: 2025);
+
+    expect(paths, [
+      '/api/v3/team/frc3847/awards',
+      '/api/v3/team/frc3847/awards/2025',
+    ]);
+  });
+
+  test('TbaClient.getTeamAwards reads an individual award\'s awardee',
+      () async {
+    // The live fixture is team 3847, whose awards are all team-level, so the
+    // named-recipient case is covered here instead.
+    final mockClient = MockClient(
+      (_) async => http.Response(
+        jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'name': "Dean's List Finalist",
+            'award_type': 4,
+            'event_key': '2025txhou',
+            'year': 2025,
+            'recipient_list': <Map<String, dynamic>>[
+              <String, dynamic>{'team_key': 'frc3847', 'awardee': 'A Student'},
+            ],
+          },
+        ]),
+        200,
+      ),
+    );
+    final client = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: mockClient,
+    );
+
+    final awards = await client.getTeamAwards(3847);
+    expect(awards.single.recipients.single.awardee, 'A Student');
+    expect(awards.single.eventKey, '2025txhou');
+    expect(awards.single.isWinOrFinalist, isFalse);
+  });
+
+  test('TbaClient.getTeamAwards is empty for a team that has won nothing',
+      () async {
+    // A 404 is what TBA answers for a team key it does not know, and an empty
+    // array is what it answers for a rookie. Neither is an error.
+    final client404 = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: MockClient((_) async => http.Response('', 404)),
+    );
+    expect(await client404.getTeamAwards(9999), isEmpty);
+
+    // A malformed 200 degrades the same way, matching the other list
+    // endpoints rather than throwing out of a screen build.
+    final clientJunk = TbaClient(
+      config: InMemoryTbaConfig('test-key'),
+      httpClient: MockClient((_) async => http.Response('{}', 200)),
+    );
+    expect(await clientJunk.getTeamAwards(3847), isEmpty);
+  });
+
   test('the three new endpoints return null on 404', () async {
     final mockClient = MockClient((_) async => http.Response('', 404));
     final client = TbaClient(

@@ -220,6 +220,32 @@ class TbaClient {
     return TbaEventAwards.fromJson(eventKey, decoded);
   }
 
+  /// `GET /team/frc{teamNumber}/awards`, or `/awards/{year}` when [year] is
+  /// given — every award the team has received, newest season last.
+  ///
+  /// Empty rather than null for a team that has never won anything, which is
+  /// the normal state for a rookie and not an error. Each [TbaAward] carries
+  /// its own `eventKey` and `year`, because an unscoped list spans a team's
+  /// whole history and the caller cannot infer either from the request.
+  Future<List<TbaAward>> getTeamAwards(int teamNumber, {int? year}) async {
+    final path = year == null
+        ? '/team/frc$teamNumber/awards'
+        : '/team/frc$teamNumber/awards/$year';
+    final body = await _get(path);
+    if (body == null) {
+      return const <TbaAward>[];
+    }
+    final decoded = jsonDecode(body);
+    if (decoded is! List) {
+      return const <TbaAward>[];
+    }
+    return List<TbaAward>.unmodifiable(
+      decoded
+          .whereType<Map>()
+          .map((a) => TbaAward.fromJson(Map<String, dynamic>.from(a))),
+    );
+  }
+
   /// `GET /event/{eventKey}/predictions` — TBA's own predicted scores, keyed by
   /// match key.
   ///
