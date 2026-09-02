@@ -1,7 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
 
+- `TbaTeamRanking.extraStats` and `TbaEventRankings.extraStatsNames` /
+  `extraStatsFor` model the `extra_stats` / `extra_stats_info` pair from
+  `/event/{key}/rankings`, the same positional pairing `sortOrders` /
+  `sortOrderNames` already gets. On `2025cabe` this is Total Ranking Points,
+  previously present in the payload and unreachable through the client.
 - Tests now assert against captured live response bodies in `test/fixtures/`,
   one for every endpoint the client exposes, including `fetchTeamAvatar`,
   whose bytes come from `details.base64Image` two levels inside a mixed media
