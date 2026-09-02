@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- Model tests now assert against captured live response bodies in
+  `test/fixtures/`, covering every endpoint the client exposes. No behavior
+  change and no version bump: the audit that prompted this found the models
+  already correct against the live API, so this locks that in rather than
+  fixing anything.
+
+  Prompted by `statbotics_client` v0.4.0, where models that had never been
+  run against a live body shipped four releases broken while their
+  hand-written tests passed. The tests there agreed with the models rather
+  than with the API. This client was written against a reachable API and
+  holds up, but nothing was pinning that.
+
+  One case stays hand-written: an unplayed match, where TBA sends
+  `score: -1` and an empty `winning_alliance`. No live event had one on the
+  capture date.
+
 ## 0.7.0
 
 - `TbaTeamRanking.teamNumber` parses the numeric team number out of `teamKey`,

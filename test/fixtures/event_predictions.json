@@ -1,0 +1,68 @@
+{
+ "match_predictions": {
+  "qual": {
+   "2025cabe_qm1": {
+    "blue": {
+     "auto_coral_scored": 1.2063307861784853,
+     "auto_coral_scored_var": 6.004598567242545,
+     "barge_points": 5.7312659080851525,
+     "barge_points_var": 109.55178629481073,
+     "coral_scored": 9.556636073093774,
+     "coral_scored_var": 119.48053137066108,
+     "prob_auto_coral_bonus": 0.5335520579621001,
+     "prob_barge_bonus": 0.21476271397895708,
+     "prob_coral_bonus": 0.16968405563771305,
+     "score": 71.53870923168124,
+     "score_var": 619.169184171697
+    },
+    "prob": 0.5676146771599043,
+    "red": {
+     "auto_coral_scored": 1.2526766625323318,
+     "auto_coral_scored_var": 1.8541863631451678,
+     "barge_points": 6.549482683760752,
+     "barge_points_var": 39.30095130169672,
+     "coral_scored": 10.031077456784352,
+     "coral_scored_var": 41.68904695727676,
+     "prob_auto_coral_bonus": 0.5736057710039332,
+     "prob_barge_bonus": 0.11732593837415639,
+     "prob_coral_bonus": 0.06129849762925632,
+     "score": 78.28251433137044,
+     "score_var": 948.8724865377757
+    },
+    "winning_alliance": "red"
+   }
+  },
+  "playoff": {
+   "2025cabe_f1m1": {
+    "blue": {
+     "auto_coral_scored": 5.9914462505482105,
+     "auto_coral_scored_var": 2.7471593779386323,
+     "barge_points": 23.5263955799857,
+     "barge_points_var": 34.14065376941644,
+     "coral_scored": 33.71267647354588,
+     "coral_scored_var": 98.88599451326743,
+     "prob_auto_coral_bonus": 0.9987002455850916,
+     "prob_barge_bonus": 0.9484909241370727,
+     "prob_coral_bonus": 0.9160480073531274,
+     "score": 182.65052552313074,
+     "score_var": 908.6313173814572
+    },
+    "prob": 0.8034583735753831,
+    "red": {
+     "auto_coral_scored": 5.528093212081025,
+     "auto_coral_scored_var": 2.343996087730643,
+     "barge_points": 22.752960741531872,
+     "barge_points_var": 39.83321944276537,
+     "coral_scored": 37.22515312977025,
+     "coral_scored_var": 37.59799405032348,
+     "prob_auto_coral_bonus": 0.9984496928632468,
+     "prob_barge_bonus": 0.9172576028877022,
+     "prob_coral_bonus": 0.9975166657793788,
+     "score": 214.51031907530785,
+     "score_var": 483.0194813770887
+    },
+    "winning_alliance": "red"
+   }
+  }
+ }
+}

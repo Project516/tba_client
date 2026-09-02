@@ -1,0 +1,70 @@
+[
+ {
+  "actual_time": 1743981897,
+  "alliances": {
+   "blue": {
+    "dq_team_keys": [],
+    "score": 220,
+    "surrogate_team_keys": [],
+    "team_keys": [
+     "frc8033",
+     "frc972",
+     "frc8793"
+    ]
+   },
+   "red": {
+    "dq_team_keys": [],
+    "score": 239,
+    "surrogate_team_keys": [],
+    "team_keys": [
+     "frc254",
+     "frc2204",
+     "frc4270"
+    ]
+   }
+  },
+  "comp_level": "f",
+  "event_key": "2025cabe",
+  "key": "2025cabe_f1m1",
+  "match_number": 1,
+  "predicted_time": 1743981273,
+  "set_number": 1,
+  "time": 1743980040,
+  "winning_alliance": "red"
+ },
+ {
+  "actual_time": 1743868885,
+  "alliances": {
+   "blue": {
+    "dq_team_keys": [
+     "frc10500"
+    ],
+    "score": 40,
+    "surrogate_team_keys": [],
+    "team_keys": [
+     "frc5985",
+     "frc10500",
+     "frc4973"
+    ]
+   },
+   "red": {
+    "dq_team_keys": [],
+    "score": 138,
+    "surrogate_team_keys": [],
+    "team_keys": [
+     "frc668",
+     "frc4186",
+     "frc6418"
+    ]
+   }
+  },
+  "comp_level": "qm",
+  "event_key": "2025cabe",
+  "key": "2025cabe_qm1",
+  "match_number": 1,
+  "predicted_time": 1743868243,
+  "set_number": 1,
+  "time": 1743868800,
+  "winning_alliance": "red"
+ }
+]
