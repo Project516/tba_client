@@ -1,3 +1,5 @@
+> **Moved.** This package now lives in [Project516/dart-packages](https://github.com/Project516/dart-packages/tree/main/packages/tba_client), tagged per release, currently `tba_client-v0.9.0`. This repo is archived and gets no further updates.
+
 # tba_client
 
 A typed Dart client for [The Blue Alliance](https://www.thebluealliance.com) API v3. Pure Dart, so it works in Flutter apps, CLIs, and servers alike.
